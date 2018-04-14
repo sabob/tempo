@@ -1,12 +1,12 @@
-        
+apply plugin: "java"
 task hello {
     doLast {
-        println 'Hello Earth'
+        println "Hello Earth"
     }
 }
 hello.doFirst() {
-    println 'Hello Venus'
+    println "Hello Venus"
 }
 hello.doLast() {
-    println 'Hello Mars'
+    println "Hello Mars"
 }
