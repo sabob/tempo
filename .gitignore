@@ -1,0 +1,7 @@
+/nbproject/
+/.idea/
+/dist/
+/build/
+/nb-build.xml
+/.gradle/
+/tempo.iml
