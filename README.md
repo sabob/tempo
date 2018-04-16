@@ -1,2 +1,2 @@
 # tempo
-Tempo provides helper utilities for JPA EntityManager such as "Open EntityManager in view" pattern and Transaction.REQUIRED behavior.
+Tempo provides helper utilities for JPA EntityManager such as the "Open EntityManager in view" pattern and a Transaction.REQUIRED strategy.
