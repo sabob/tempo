@@ -16,7 +16,6 @@ dependencies {
 }
 
 task copyLibs(type: Copy) {
-    print "EH " + configurations
     //def libs = configurations.api + configurations.implementation + configurations.testImplementation
     def libs = configurations.runtimeClasspath  + configurations.testRuntimeClasspath;
     into "$projectDir/lib"

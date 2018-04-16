@@ -1,10 +1,11 @@
 package za.sabob.tempo;
 
-import javax.persistence.*;
-import org.testng.*;
-import org.testng.annotations.*;
+import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import za.sabob.tempo.util.*;
+import za.sabob.tempo.util.CloseHandle;
+
+import javax.persistence.EntityManager;
 
 public class OpenInViewTest extends BaseTest {
 

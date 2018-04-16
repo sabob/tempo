@@ -1,7 +1,9 @@
 package za.sabob.tempo;
-import javax.persistence.*;
-import org.testng.*;
-import org.testng.annotations.*;
+import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import javax.persistence.EntityManager;
 
 public class BasicEMTest extends BaseTest {
 
