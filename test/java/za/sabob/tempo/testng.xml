@@ -1,0 +1,10 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+ 
+<suite name="lockSuite" verbose="1" >
+    <test name="test1"   >
+    <packages>
+        <package name="za.sabob.tempo"/>
+    </packages>
+ </test>
+
+</suite>

@@ -5,3 +5,5 @@
 /nb-build.xml
 /.gradle/
 /tempo.iml
+/lib/
+/test-output/

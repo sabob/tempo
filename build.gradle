@@ -1,12 +1,24 @@
-apply plugin: "java"
-task hello {
-    doLast {
-        println "Hello Earth"
-    }
+apply plugin: 'java-library'
+
+repositories {
+    mavenCentral();
 }
-hello.doFirst() {
-    println "Hello Venus"
+
+
+dependencies {
+    api "org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.0.Final"
+    api "javax.servlet:javax.servlet-api:3.0.1"
+    
+    testImplementation  "org.testng:testng:6.14.2"
+    testImplementation "org.hibernate:hibernate-entitymanager:4.3.11.Final"
+    testImplementation "c3p0:c3p0:0.9.1.2"
+    testImplementation "org.apache.derby:derby:10.14.1.0"
 }
-hello.doLast() {
-    println "Hello Mars"
+
+task copyLibs(type: Copy) {
+    print "EH " + configurations
+    //def libs = configurations.api + configurations.implementation + configurations.testImplementation
+    def libs = configurations.runtimeClasspath  + configurations.testRuntimeClasspath;
+    into "$projectDir/lib"
+    from libs
 }
