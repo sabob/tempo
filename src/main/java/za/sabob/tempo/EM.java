@@ -2,6 +2,7 @@ package za.sabob.tempo;
 
 import java.util.logging.*;
 import javax.persistence.*;
+import za.sabob.tempo.transaction.*;
 import za.sabob.tempo.util.*;
 import static za.sabob.tempo.util.EMUtils.addSuppressed;
 
@@ -54,7 +55,7 @@ public class EM {
     }
 
     public static void closeAll() {
-        if (EMF.hasContainer()) {
+        if ( EMF.hasContainer() ) {
             EMFContainer container = EMF.getOrCreateContainer();
             container.forceClose();
         }
@@ -84,6 +85,31 @@ public class EM {
             EntityManager em = getOrCreateEM( emf );
             cleanupTransaction( em, handle );
         }
+    }
+
+    public static void doInTransaction( EntityManagerFactory emf, Transaction transaction ) {
+
+        EntityManager em = null;
+
+        try {
+            em = beginTransaction( emf );
+
+            transaction.doInTransaction( em );
+
+            commitTransaction( em );
+
+        } catch ( Exception ex ) {
+            throw rollbackTransaction( em, ex );
+
+        } finally {
+
+            cleanupTransaction( em );
+        }
+    }
+
+    public static void doInTransaction( Transaction transaction ) {
+        EntityManagerFactory emf = EMF.getDefault();
+        doInTransaction( emf, transaction );
     }
 
     public static EntityManager beginTransaction() {

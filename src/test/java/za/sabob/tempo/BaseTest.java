@@ -2,7 +2,6 @@ package za.sabob.tempo;
 
 import javax.persistence.*;
 import org.testng.annotations.*;
-import za.sabob.tempo.transaction.*;
 import za.sabob.tempo.util.*;
 
 public class BaseTest {
@@ -33,7 +32,7 @@ public class BaseTest {
 
     public void removePersons() {
 
-        TX.doInTransaction( em -> {
+        EM.doInTransaction( em -> {
 
             em.createQuery( "delete from Person" ).executeUpdate();
 
