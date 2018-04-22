@@ -43,7 +43,7 @@ public final class EMF {
     public static EntityManagerFactory getDefault() {
 
         if ( defaultEMF == null ) {
-            throw new IllegalStateException( "No default EntityManagerFactory have been registered. Set a default factory or use EMF.get(factoryName) " );
+            throw new IllegalStateException( "No default EntityManagerFactory have been registered. Register a default factory or use EMF.get(factoryName) " );
         }
         return defaultEMF;
 
