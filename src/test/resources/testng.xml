@@ -1,7 +1,7 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
  
 <suite name="tempoSuite" verbose="1" >
-    <test name="test1"   >
+    <test name="TempoTests"   >
     <packages>
         <package name="za.sabob.tempo.*"/>
     </packages>

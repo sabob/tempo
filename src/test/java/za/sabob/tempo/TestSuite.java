@@ -66,7 +66,6 @@ public class TestSuite {
                     EMF.closeDefault();
                 }
 
-                //DriverManager.getConnection( "jdbc:derby:;shutdown=true" );
             } catch ( Exception ex ) {
                 Logger.getLogger( TestSuite.class.getName() ).log( Level.SEVERE, null, ex );
             }
