@@ -21,7 +21,7 @@ public class TestSuite {
         //testng.setTestClasses( new Class[] { BasicEMTest.class } );
         List suites = Lists.newArrayList();
 
-        URL url = TestSuite.class.getResource( "testng.xml" );
+            URL url = TestSuite.class.getResource( "/testng.xml" );
         String filepath = Paths.get( url.toURI() ).toFile().getCanonicalPath();
         suites.add( filepath );
             testng.setTestSuites( suites );
