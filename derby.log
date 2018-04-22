@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Sun Apr 22 12:31:58 SAST 2018:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.14.1.0 - (1808820): instance a816c00e-0162-ece9-0985-00000b799af8 
+on database directory memory:/home/bob/Projects/os/tempo/tempo with class loader sun.misc.Launcher$AppClassLoader@511d50c0 
+Loaded from file:/home/bob/Projects/os/tempo/lib/derby-10.14.1.0.jar
+java.vendor=Oracle Corporation
+java.runtime.version=1.8.0_161-b12
+user.dir=/home/bob/Projects/os/tempo
+os.name=Linux
+os.arch=amd64
+os.version=4.16.3-041603-generic
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''

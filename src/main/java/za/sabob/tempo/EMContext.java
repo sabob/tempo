@@ -16,16 +16,21 @@ public class EMContext {
 
     private final EntityManager em;
 
+    // Instead of using EM.getEntityManagerFactory, we need to track the EMF that created the EM, because frameworks proxy the EntityManagerFactories
+    // so that EM.getEntityManagerFactory returns a different instance that Tempo used.
+    private EntityManagerFactory emf = null;
+
     private final Stack<Object> callstack = new Stack();
 
     private CloseHandle closeHandle = null;
 
-    public EMContext( EntityManager em ) {
+    public EMContext( EntityManager em, EntityManagerFactory emf ) {
         this.em = em;
+        this.emf = emf;
     }
 
-    public EMContext( EntityManager em, CloseHandle closeHandle ) {
-        this.em = em;
+    public EMContext( EntityManager em, EntityManagerFactory emf, CloseHandle closeHandle ) {
+        this( em, emf );
         this.closeHandle = closeHandle;
     }
 
@@ -59,7 +64,6 @@ public class EMContext {
 //        if ( !canRollback() ) {
 //            return;
 //        }
-
         EntityManager em = getEM();
 
         try {
@@ -77,13 +81,13 @@ public class EMContext {
 
     public void commitTransaction() {
 
-        if ( !canCommit()) {
+        if ( !canCommit() ) {
             return;
         }
 
         EntityManager em = getEM();
-        
-        if (em.isOpen() && em.getTransaction().isActive()) {
+
+        if ( em.isOpen() && em.getTransaction().isActive() ) {
             em.getTransaction().commit();
         }
     }
@@ -129,16 +133,6 @@ public class EMContext {
         return map.get( emf );
     }
 
-    private static Map<EntityManagerFactory, CloseHandle> getOpenInViewMap() {
-        Map<EntityManagerFactory, CloseHandle> map = OPEN_IN_VIEW_HANDLE_HOLDER.get();
-        if ( map == null ) {
-            map = new HashMap();
-            OPEN_IN_VIEW_HANDLE_HOLDER.set( map );
-        }
-        return map;
-
-    }
-
     public CloseHandle openInView( EntityManagerFactory emf ) {
 
         if ( closeHandle != null ) {
@@ -159,7 +153,7 @@ public class EMContext {
         return closeHandle != null;
     }
 
-    public RuntimeException closeSilently( CloseHandle handle ) {
+    public RuntimeException closeQuietly( CloseHandle handle ) {
 
         try {
             close( handle );
@@ -207,13 +201,12 @@ public class EMContext {
             exception = addSuppressed( ex, exception );
 
         } finally {
-            RuntimeException ex = closeSilently( closeHandle );
+            RuntimeException ex = closeQuietly( closeHandle );
             exception = addSuppressed( ex, exception );
 
         }
 
         EMUtils.throwAsRuntimeIfException( exception );
-
     }
 
     void performClose() {
@@ -221,12 +214,18 @@ public class EMContext {
 
         if ( em.isOpen() ) {
             em.close();
+            cleanupOpenInView();
 
         } else {
             LOGGER.warning( "EntityManager is already closed" );
         }
 
         this.closeHandle = null;
+    }
+
+    void cleanupOpenInView() {
+        Map<EntityManagerFactory, CloseHandle> map = getOpenInViewMap();
+        map.remove( emf );
     }
 
     void forceCleanupTransaction() {
@@ -256,5 +255,15 @@ public class EMContext {
     @Override
     public String toString() {
         return callstack.toString();
+    }
+
+    private static Map<EntityManagerFactory, CloseHandle> getOpenInViewMap() {
+        Map<EntityManagerFactory, CloseHandle> map = OPEN_IN_VIEW_HANDLE_HOLDER.get();
+        if ( map == null ) {
+            map = new HashMap();
+            OPEN_IN_VIEW_HANDLE_HOLDER.set( map );
+        }
+        return map;
+
     }
 }

@@ -1,19 +1,20 @@
-package za.sabob.tempo;
+package za.sabob.tempo.domain;
 
 import javax.persistence.*;
 
 @Entity
 public class Person {
-    
-    private Long id;
+
+    @Id
+    private long id;
 
     private String name;
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId( Long id ) {
+    public void setId( long id ) {
         this.id = id;
     }
 
@@ -24,7 +25,5 @@ public class Person {
     public void setName( String name ) {
         this.name = name;
     }
-    
-    
-    
+
 }

@@ -2,8 +2,9 @@ package za.sabob.tempo.basic;
 
 import javax.persistence.*;
 import org.testng.*;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 import za.sabob.tempo.*;
+import za.sabob.tempo.domain.*;
 
 public class CommitTest extends BaseTest {
 
@@ -25,6 +26,6 @@ public class CommitTest extends BaseTest {
         Person savedPerson = em.find( Person.class, person.getId() );
         Assert.assertNotNull( savedPerson );
 
-        removePerson( person );
+        removePersons();
     }
 }

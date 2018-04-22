@@ -1,11 +1,9 @@
 package za.sabob.tempo;
 
-import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-import za.sabob.tempo.util.CloseHandle;
-
-import javax.persistence.EntityManager;
+import javax.persistence.*;
+import org.testng.*;
+import org.testng.annotations.*;
+import za.sabob.tempo.util.*;
 
 public class OpenInViewTest extends BaseTest {
 
@@ -30,22 +28,22 @@ public class OpenInViewTest extends BaseTest {
         Assert.assertTrue( em.isOpen() ); // em is still open because no handle was passed to cleanup
 
         EM.cleanupTransaction( em );
-        Assert.assertTrue( em.isOpen() );// em is still open because no handle was passed to cleanup
+        Assert.assertTrue( em.isOpen() );// attempting a second cleanup won't work. EM is still open because no handle was passed to cleanup
 
         EM.cleanupTransaction( em, handle ); // em will be closed now
         Assert.assertFalse( em.isOpen() );
     }
-    
-    //@Test
+
+    @Test
     public void testOpenWithHandleButCloseContainer() {
-        
+
         // Closing Container will force close the EntityManager even if no handle is passed in
 
         CloseHandle handle = EM.openInView(); // Cannot close the EM until handle is pass in
 
         EntityManager em = EM.beginTransaction();
         EM.rollbackTransaction( em );
-        
+
         Assert.assertTrue( em.isOpen() );
         EMF.cleanupTransactions();
         Assert.assertFalse( em.isOpen() );

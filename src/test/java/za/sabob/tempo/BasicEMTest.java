@@ -1,9 +1,9 @@
 package za.sabob.tempo;
-import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
-import javax.persistence.EntityManager;
+import javax.persistence.*;
+import org.testng.*;
+import org.testng.annotations.*;
+import za.sabob.tempo.domain.*;
 
 public class BasicEMTest extends BaseTest {
 
@@ -13,18 +13,18 @@ public class BasicEMTest extends BaseTest {
     @BeforeMethod
     public void setUp() {
     }
-    
-    //@Test
+
+    @Test
     public void testNestedBeginIgnoreFirstClose() {
+
         EntityManager em = EM.beginTransaction();
-        
-        em = EM.beginTransaction();        
-        
-        EM.commitTransaction( em );        
+        em = EM.beginTransaction();
+
+        EM.commitTransaction( em );
         EM.cleanupTransaction( em );
-        
+
         Assert.assertTrue( em.isOpen() );
-        
+
         EM.commitTransaction( em );
         EM.cleanupTransaction( em );
 
@@ -43,18 +43,18 @@ public class BasicEMTest extends BaseTest {
 
         EM.commitTransaction( em ); // should be ignored
         EM.cleanupTransaction( em );//pop context but no cleanup
-        
+
         //EM.rollbackTransaction( em ); // should be ignored
         em.getTransaction().rollback();
         EM.cleanupTransaction( em );// cleanup occurs
-        
+
         em = EM.getEM();
         Person savedPerson = em.find( Person.class, person.getId() );
         Assert.assertNull( savedPerson );
-        EM.cleanupTransaction( em );        
+        EM.cleanupTransaction( em );
     }
-    
-    //@Test
+
+    @Test
     public void testNestedBeginCommitOnSecondCall() {
 
         EntityManager em = EM.beginTransaction();
@@ -68,16 +68,16 @@ public class BasicEMTest extends BaseTest {
         EM.commitTransaction( em ); // should be ignored
 
         EM.cleanupTransaction( em );
-        
-        EM.commitTransaction( em ); // should work now
-        
-        EM.cleanupTransaction( em ); // Should be closed now
-        Assert.assertFalse( em.isOpen());
 
-        removePerson(person );
+        EM.commitTransaction( em ); // should work now
+
+        EM.cleanupTransaction( em ); // Should be closed now
+        Assert.assertFalse( em.isOpen() );
+
+        removePersons();
     }
-    
-    //@Test
+
+    @Test
     public void testNestedBeginIgnoreFirstRollback() {
 
         EntityManager em = EM.beginTransaction();
@@ -89,24 +89,24 @@ public class BasicEMTest extends BaseTest {
         em.persist( person );
         //Assert.assertNull( saga.getId() );
 
-        EM.rollbackTransaction( em ); // should be ignored
+        EM.rollbackTransaction( em ); // rollback always succeeds, even nested
 
         EM.cleanupTransaction( em );
-        
-        EM.commitTransaction( em );
+
+        EM.commitTransaction( em ); // ignored, already rolled back so transaction isn't active
         EM.cleanupTransaction( em );
-        
+
         em = EM.getEM();
         Person savedPerson = em.find( Person.class, person.getId() );
-        Assert.assertNotNull( savedPerson );
-        
-        EM.rollbackTransaction( em );        
-        EM.cleanupTransaction( em );        
-        
-        removePerson( person );
+        Assert.assertNull( savedPerson );
+
+        EM.rollbackTransaction( em );
+        EM.cleanupTransaction( em );
+
+        removePersons();
     }
-    
-    //@Test
+
+    @Test
     public void testNestedBeginRollbackOnSecondCall() {
 
         EntityManager em = EM.beginTransaction();
@@ -120,14 +120,14 @@ public class BasicEMTest extends BaseTest {
         EM.rollbackTransaction( em ); // should be ignored
 
         EM.cleanupTransaction( em );
-        
+
         EM.rollbackTransaction( em ); // should work now
-        
+
         EM.cleanupTransaction( em ); // Should be closed now
-        Assert.assertFalse( em.isOpen());
+        Assert.assertFalse( em.isOpen() );
 
         em = EM.beginTransaction();
-        Person savedPerson= em.find( Person.class, person.getId() );
+        Person savedPerson = em.find( Person.class, person.getId() );
         Assert.assertNull( savedPerson );
         EM.commitTransaction( em );
         EM.cleanupTransaction( em );

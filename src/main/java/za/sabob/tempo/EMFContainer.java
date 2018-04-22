@@ -1,17 +1,12 @@
 package za.sabob.tempo;
 
-import za.sabob.tempo.util.CloseHandle;
-import za.sabob.tempo.util.EMUtils;
-
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
+import javax.persistence.*;
+import za.sabob.tempo.util.*;
 
 public class EMFContainer {
 
-    final private Map<EntityManagerFactory, EMContext> emByFactory = new LinkedHashMap<>();
+    final private Map<EntityManagerFactory, EMContext> emByFactory = new HashMap<>();
 
     final private Map<EntityManager, EMContext> contextByEM = new HashMap<>();
 
@@ -39,11 +34,12 @@ public class EMFContainer {
 
         return emByFactory.get( emf ) != null;
     }
+
     protected EMContext createEMContext( EntityManagerFactory emf ) {
         EntityManager em = emf.createEntityManager();
-        CloseHandle closeHandle = EMContext.getOpenInViewHandle(emf);
-        
-        return new EMContext( em, closeHandle );
+        CloseHandle closeHandle = EMContext.getOpenInViewHandle( emf ); // In case there was a openInView call made, associate that closeHandle with the EMContext
+
+        return new EMContext( em, emf, closeHandle );
     }
 
     protected EMContext getEMContext( EntityManagerFactory emf ) {
@@ -61,7 +57,7 @@ public class EMFContainer {
 
     public void forceClose() {
         Exception ex1 = cleanupTransactionsSilently();
-        Exception ex2 = closeSilently();
+        Exception ex2 = closeQuietly();
         ex2 = EMUtils.addSuppressed( ex2, ex1 );
 
         EMUtils.throwAsRuntimeIfException( ex2 );
@@ -89,7 +85,7 @@ public class EMFContainer {
         return EMUtils.toRuntimeException( exception );
     }
 
-    public RuntimeException closeSilently() {
+    public RuntimeException closeQuietly() {
 
         Exception exception = null;
 

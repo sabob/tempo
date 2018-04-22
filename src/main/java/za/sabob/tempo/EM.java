@@ -1,13 +1,8 @@
 package za.sabob.tempo;
 
-import za.sabob.tempo.util.CloseHandle;
-import za.sabob.tempo.util.EMUtils;
-
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import java.util.logging.*;
+import javax.persistence.*;
+import za.sabob.tempo.util.*;
 import static za.sabob.tempo.util.EMUtils.addSuppressed;
 
 public class EM {
@@ -42,7 +37,7 @@ public class EM {
     }
 
     public static CloseHandle openInView() {
-        EntityManagerFactory emf = EMF.get();
+        EntityManagerFactory emf = EMF.getDefault();
         return openInView( emf );
     }
 
@@ -50,15 +45,15 @@ public class EM {
 
         CloseHandle handle = EMContext.getOpenInViewHandle( emf );
         if ( handle != null ) {
-            throw new IllegalStateException( "EMContext is already open, close it first before opening again." );
+            throw new IllegalStateException( "EMContext is already openInView, close the EntityManager first before opening again." );
         }
 
         handle = createHandle();
         EMContext.setOpenInViewHandle( emf, handle );
         return handle;
     }
-    
-    public static void closeAllEM() {
+
+    public static void closeAll() {
         if (EMF.hasContainer()) {
             EMFContainer container = EMF.getOrCreateContainer();
             container.forceClose();
@@ -66,7 +61,7 @@ public class EM {
     }
 
     public static void close() {
-        EntityManagerFactory emf = EMF.get();
+        EntityManagerFactory emf = EMF.getDefault();
         close( emf );
     }
 
@@ -79,7 +74,7 @@ public class EM {
     }
 
     public static void close( CloseHandle handle ) {
-        EntityManagerFactory emf = EMF.get();
+        EntityManagerFactory emf = EMF.getDefault();
         close( emf, handle );
     }
 
@@ -92,7 +87,7 @@ public class EM {
     }
 
     public static EntityManager beginTransaction() {
-        EntityManagerFactory emf = EMF.get();
+        EntityManagerFactory emf = EMF.getDefault();
         return beginTransaction( emf );
     }
 
@@ -123,7 +118,7 @@ public class EM {
         }
     }
 
-    public static RuntimeException rollbackTransactionSilently( EntityManager em, Exception exception ) {
+    public static RuntimeException rollbackTransactionQuietly( EntityManager em, Exception exception ) {
 
         try {
 
@@ -141,7 +136,10 @@ public class EM {
             throw new IllegalArgumentException( "exception cannot be null" );
         }
 
-        return rollbackTransactionSilently( em, exception );
+        RuntimeException result = rollbackTransactionQuietly( em, exception );
+
+        EMUtils.throwAsRuntimeIfException( result );
+        return result;
     }
 
     public static void cleanupTransaction( EntityManager em ) {
@@ -214,7 +212,7 @@ public class EM {
             exception = addSuppressed( ex, exception );
 
         } finally {
-            RuntimeException ex = ctx.closeSilently( closeHandle );
+            RuntimeException ex = ctx.closeQuietly( closeHandle );
             exception = addSuppressed( ex, exception );
         }
 

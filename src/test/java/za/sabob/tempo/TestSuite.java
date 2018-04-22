@@ -14,17 +14,19 @@ public class TestSuite {
     public static void main( String[] args ) {
 
         try {
-            TestListenerAdapter tla = new TestSuite.MyListener();
-            TestNG testng = new TestNG();
-//testng.setTestClasses(new Class[] { Run2.class });
-            List suites = Lists.newArrayList();
+        TestListenerAdapter tla = new TestSuite.MyListener();
+        TestNG testng = new TestNG();
+        //testng.setTestClasses( new Class[] { OpenInViewTest.class } );
+        //testng.setTestClasses( new Class[] { BasicEMTest.class, OpenInViewTest.class } );
+        //testng.setTestClasses( new Class[] { BasicEMTest.class } );
+        List suites = Lists.newArrayList();
 
-            URL url = TestSuite.class.getResource( "testng.xml" );
-            String filepath = Paths.get(url.toURI()).toFile().getCanonicalPath();
-            suites.add( filepath );
+        URL url = TestSuite.class.getResource( "testng.xml" );
+        String filepath = Paths.get( url.toURI() ).toFile().getCanonicalPath();
+        suites.add( filepath );
             testng.setTestSuites( suites );
-            testng.addListener( tla );
-            testng.run();
+        testng.addListener( tla );
+        testng.run();
 
             //System.out.println( "DONE " + getUnclosedConnections() );
         } catch ( Exception ex ) {
@@ -37,9 +39,37 @@ public class TestSuite {
     public static class MyListener extends TestListenerAdapter {
 
         @Override
+        public void onTestStart( ITestResult result ) {
+            LOGGER.log( Level.INFO, "*** Starting test: Class=" + result.getInstanceName() + " method=" + result.getName() );
+        }
+
+        @Override
+        public void onTestSuccess( ITestResult result ) {
+            LOGGER.log( Level.INFO, "*** test Success: Class=" + result.getInstanceName() + " method=" + result.getName() );
+        }
+
+        @Override
         public void onTestFailedButWithinSuccessPercentage( ITestResult result ) {
-            
-            log( result );
+        }
+
+        @Override
+        public void setFailedTests( List<ITestResult> list ) {
+            log( list.get( 0 ) );
+        }
+
+
+        @Override
+        public void onFinish( ITestContext itc ) {
+            try {
+                System.out.println( "Test Finished" );
+                if ( EMF.hasDefault() ) {
+                    EMF.closeDefault();
+                }
+
+                //DriverManager.getConnection( "jdbc:derby:;shutdown=true" );
+            } catch ( Exception ex ) {
+                Logger.getLogger( TestSuite.class.getName() ).log( Level.SEVERE, null, ex );
+            }
         }
 
         @Override

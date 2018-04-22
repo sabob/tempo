@@ -2,10 +2,8 @@ package za.sabob.tempo;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.Logger;
-
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
+import java.util.logging.*;
+import javax.persistence.*;
 import za.sabob.tempo.util.*;
 
 public final class EMF {
@@ -21,15 +19,28 @@ public final class EMF {
     private EMF() {
     }
 
-    public static void register( EntityManagerFactory emf ) {
+    public static void registerDefault( EntityManagerFactory emf ) {
 
-    }
+        if ( defaultEMF != null ) {
+            if ( defaultEMF.isOpen() ) {
+                throw new IllegalStateException( "EMF already has a default EntityManagerFactory that is open. You should prpobably close "
+                    + "the current default instance before setting a new default" );
+            }
+        }
 
-    public static void setDefault( EntityManagerFactory emf ) {
         defaultEMF = emf;
     }
 
-    public static EntityManagerFactory get() {
+    public static void register( String emfName, EntityManagerFactory emf ) {
+        FACTORIES.put( emfName, emf );
+    }
+
+    public static boolean hasDefault() {
+        return defaultEMF != null;
+
+    }
+
+    public static EntityManagerFactory getDefault() {
 
         if ( defaultEMF == null ) {
             throw new IllegalStateException( "No default EntityManagerFactory have been registered. Set a default factory or use EMF.get(factoryName) " );
@@ -39,9 +50,9 @@ public final class EMF {
     }
 
     public static EntityManagerFactory get( String emfName ) {
-        
+
         EntityManagerFactory emf = FACTORIES.get( emfName );
-        
+
         if ( emf == null ) {
             throw new IllegalStateException( "EntityManagerFactory called '" + emfName + "' is not registered." );
         }
@@ -51,7 +62,7 @@ public final class EMF {
     }
 
     public static EntityManager getEM() {
-        EntityManagerFactory emf = get();
+        EntityManagerFactory emf = getDefault();
         return getEM( emf );
     }
 
@@ -87,6 +98,60 @@ public final class EMF {
 
         EMF.setContainer( null );
         return ex;
+    }
+
+    public static void closeDefault() {
+        close( getDefault() );
+
+    }
+
+    public static void closeAll() {
+
+        Exception exception = null;
+
+        for ( EntityManagerFactory emf : FACTORIES.values() ) {
+
+            try {
+
+                close( emf );
+
+            } catch ( Exception e ) {
+                exception = EMUtils.addSuppressed( e, exception );
+            }
+        }
+
+        EMUtils.throwAsRuntimeIfException( exception );
+    }
+
+    public static void close( EntityManagerFactory emf ) {
+
+        if ( emf != null && emf.isOpen() ) {
+
+            Exception exception = null;
+
+            try {
+                EM.closeAll();
+
+            } catch ( RuntimeException e ) {
+                exception = EMUtils.addSuppressed( e, exception );
+            }
+
+            try {
+                emf.close();
+
+            } catch ( RuntimeException e ) {
+                exception = EMUtils.addSuppressed( e, exception );
+            }
+
+            EMUtils.throwAsRuntimeIfException( exception );
+        }
+
+    }
+
+    public static void close( String emfName ) {
+        EntityManagerFactory emf = get( emfName );
+        close( emf );
+
     }
 
     public static void setContainer( EMFContainer container ) {

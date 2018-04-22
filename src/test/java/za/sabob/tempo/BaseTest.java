@@ -1,27 +1,43 @@
 package za.sabob.tempo;
 
 import javax.persistence.*;
-import javax.sql.*;
-import org.testng.*;
+import org.testng.annotations.*;
+import za.sabob.tempo.transaction.*;
+import za.sabob.tempo.util.*;
 
 public class BaseTest {
 
-    public static DataSource ds;
+    //public static DataSource ds;
+    @BeforeClass
+    public void beforeClass() {
 
-    public BaseTest() {
+        System.out.println( "Before class" );
+
+        //ds = TestUtils.getDS();
+        //TestUtils.createDatabase( ds );
+        //TestUtils.populateDatabase( ds );
+        if ( EMF.hasDefault() ) {
+            EMF.closeDefault();
+        }
+
+        EntityManagerFactory emf = TestUtils.createEntityManagerFactory();
+        EMF.registerDefault( emf );
+
     }
 
-    public void removePerson( Person person ) {
+    @AfterClass
+    public void afterClass() {
+        System.out.println( "After class" );
 
-        EntityManager em = EM.beginTransaction();
-        Person savedPerson = em.find( Person.class, person.getId() );
-        em.remove( person );
-        EM.commitTransaction( em );
-        EM.cleanupTransaction( em );
+    }
 
-        em = EM.getEM();
-        savedPerson = em.find( Person.class, savedPerson.getId() );
-        Assert.assertNull( savedPerson );
+    public void removePersons() {
+
+        TX.doInTransaction( em -> {
+
+            em.createQuery( "delete from Person" ).executeUpdate();
+
+        } );
 
     }
 }

@@ -2,8 +2,9 @@ package za.sabob.tempo.basic.nested;
 
 import javax.persistence.*;
 import org.testng.*;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 import za.sabob.tempo.*;
+import za.sabob.tempo.domain.*;
 
 public class NestedRollbackTest extends BaseTest {
 
