@@ -10,8 +10,6 @@ public class BaseTest {
     @BeforeClass
     public void beforeClass() {
 
-        System.out.println( "Before class" );
-
         //ds = TestUtils.getDS();
         //TestUtils.createDatabase( ds );
         //TestUtils.populateDatabase( ds );
@@ -24,15 +22,9 @@ public class BaseTest {
 
     }
 
-    @AfterClass
-    public void afterClass() {
-        System.out.println( "After class" );
-
-    }
-
     public void removePersons() {
 
-        EM.doInTransaction( em -> {
+        EM.updateInTransaction( em -> {
 
             em.createQuery( "delete from Person" ).executeUpdate();
 

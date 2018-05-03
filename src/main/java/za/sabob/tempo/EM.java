@@ -87,14 +87,20 @@ public class EM {
         }
     }
 
-    public static void doInTransaction( EntityManagerFactory emf, Transaction transaction ) {
+    public static <X extends Exception> void updateInTransaction( TransactionUpdater<X> executor ) throws X {
+
+        EntityManagerFactory emf = EMF.getDefault();
+        updateInTransaction( emf, executor );
+    }
+
+    public static <X extends Exception> void updateInTransaction( EntityManagerFactory emf, TransactionUpdater<X> updater ) throws X {
 
         EntityManager em = null;
 
         try {
             em = beginTransaction( emf );
 
-            transaction.doInTransaction( em );
+            updater.update( em );
 
             commitTransaction( em );
 
@@ -107,9 +113,32 @@ public class EM {
         }
     }
 
-    public static void doInTransaction( Transaction transaction ) {
+    public static <R, X extends Exception> R executeInTransaction( EntityManagerFactory emf, TransactionExecutor<R, X> executor ) throws X {
+
+        EntityManager em = null;
+
+        try {
+            em = beginTransaction( emf );
+
+            R result = executor.execute( em );
+
+            commitTransaction( em );
+
+            return result;
+
+        } catch ( Exception ex ) {
+            throw rollbackTransaction( em, ex );
+
+        } finally {
+
+            cleanupTransaction( em );
+        }
+    }
+
+    public static <R, X extends Exception> R executeInTransaction( TransactionExecutor<R, X> executor ) throws X {
+
         EntityManagerFactory emf = EMF.getDefault();
-        doInTransaction( emf, transaction );
+        return executeInTransaction( emf, executor );
     }
 
     public static EntityManager beginTransaction() {

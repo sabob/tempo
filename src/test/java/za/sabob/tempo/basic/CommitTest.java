@@ -27,5 +27,9 @@ public class CommitTest extends BaseTest {
         Assert.assertNotNull( savedPerson );
 
         removePersons();
+
+        em = EM.getEM();
+        savedPerson = em.find( Person.class, person.getId() );
+        Assert.assertNull( savedPerson );
     }
 }
