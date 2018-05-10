@@ -67,12 +67,16 @@ public final class EMF {
     }
 
     public static EntityManager getEM( EntityManagerFactory emf ) {
-        EMFContainer container = getOrCreateContainer();
-
-        EMContext ctx = container.getOrCreateEMContext( emf );
+        EMContext ctx = getOrCreateEMContext( emf );
         EntityManager em = ctx.getEM();
 
         return em;
+    }
+
+    public static EMContext getOrCreateEMContext( EntityManagerFactory emf ) {
+        EMFContainer container = EMF.getOrCreateContainer();
+        EMContext ctx = container.getOrCreateEMContext( emf );
+        return ctx;
     }
 
     public static EMFContainer getOrCreateContainer() {

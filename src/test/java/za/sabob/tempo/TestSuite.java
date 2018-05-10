@@ -13,6 +13,9 @@ public class TestSuite {
 
     public static void main( String[] args ) {
 
+        EMConfig.setJoinableTransactionsDefault( true );
+        //EMConfig.setJoinableTransactions( true );
+
         try {
         TestListenerAdapter tla = new TestSuite.MyListener();
         TestNG testng = new TestNG();

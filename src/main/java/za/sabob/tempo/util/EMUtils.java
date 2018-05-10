@@ -1,7 +1,7 @@
 package za.sabob.tempo.util;
 
+import java.util.*;
 import javax.persistence.*;
-import java.util.List;
 
 public class EMUtils {
 
@@ -9,21 +9,21 @@ public class EMUtils {
      * Adds the given suppressedException to the mainException and returns the mainException, unless it is null, in which case the suppressedException is
      * returned.
      *
-     * @param mainException      the main exception on which to add the suppressedException
+     * @param mainException the main exception on which to add the suppressedException
      * @param supressedException the exception to add to the mainException
      * @return the mainException or supresesdException if mainException is null
      */
-    public static Exception addSuppressed(Exception mainException, Exception supressedException) {
+    public static Exception addSuppressed( Exception mainException, Exception supressedException ) {
 
-        if (supressedException == null) {
+        if ( supressedException == null ) {
             return mainException;
         }
 
-        if (mainException == null) {
+        if ( mainException == null ) {
             return supressedException;
         }
 
-        mainException.addSuppressed(supressedException);
+        mainException.addSuppressed( supressedException );
         return mainException;
     }
 
@@ -32,55 +32,63 @@ public class EMUtils {
      *
      * @param exception the exception to throw as a RuntimeException
      */
-    public static void throwAsRuntimeIfException(Exception exception) {
-
-        if (exception == null) {
+    public static void throwAsRuntimeIfException( Exception exception ) {
+        if ( exception == null ) {
             return;
         }
 
-        if (exception instanceof RuntimeException) {
-            throw (RuntimeException) exception;
-        }
-
-        throw new RuntimeException(exception);
+        throw toRuntimeException( exception );
     }
 
-    public static RuntimeException toRuntimeException(Exception exception) {
-        if (exception == null) {
+    public static RuntimeException toRuntimeException( Exception exception ) {
+        if ( exception == null ) {
             return null;
         }
 
-        if (exception instanceof RuntimeException) {
+        if ( exception instanceof RuntimeException ) {
             return (RuntimeException) exception;
         }
-        return new RuntimeException(exception);
+        return new RuntimeException( exception );
 
     }
 
-
-    public static <R> R getSingleResultOrNull(Query query) {
+    public static <R> R getSingleResultOrNull( Query query ) {
 
         List<R> results = query.getResultList();
 
-        if (results.isEmpty()) {
+        if ( results.isEmpty() ) {
             return null;
 
-        } else if (results.size() == 1) {
-            return results.get(0);
+        } else if ( results.size() == 1 ) {
+            return results.get( 0 );
         }
 
         throw new NonUniqueResultException();
     }
 
-    public static <R> R getFirstResultOrNull(Query query) {
+    public static <R> R getFirstResultOrNull( Query query ) {
 
         List<R> results = query.getResultList();
 
-        if (results.isEmpty()) {
+        if ( results.isEmpty() ) {
             return null;
 
         } else {
-            return results.get(0);
+            return results.get( 0 );
         }
     }
+
+//    public static boolean hasActiveTransaction( EntityManagerFactory emf ) {
+//
+//        if ( EM.hasEM( emf ) ) {
+//
+//            EntityManager em = EMF.getEM( emf );
+//            if ( em.getTransaction().isActive() ) {
+//                return true;
+//            }
+//        }
+//
+//        return false;
+//    }
+
 }

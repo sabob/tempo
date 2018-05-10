@@ -39,6 +39,17 @@ public class EMContext {
     }
 
     public EntityManager beginTransaction() {
+        try {
+
+        if ( getEM().getTransaction().isActive() ) {
+
+            if ( !EMConfig.isJoinableTransactions() ) {
+                throw new IllegalStateException(
+                    "You are not allowed to start nested transactions for the same EntityManagerFactory. An EntityManager is already busy with a transaction."
+                    + " To allow transactions to join set EMConfig.setJoinableTransactions( true )" );
+
+            }
+        }
 
         incrementCallstack();
 
@@ -55,7 +66,13 @@ public class EMContext {
 
         em.getTransaction().begin();
 
-        return em;
+            return em;
+
+        } catch ( Exception e ) {
+            RuntimeException exception = cleanupTransactionQuietly( e );
+            throw EMUtils.toRuntimeException( exception );
+
+        }
     }
 
     public void rollbackTransaction() {
@@ -101,6 +118,30 @@ public class EMContext {
 
         performCleanupTransaction( closeHandle );
     }
+
+    public RuntimeException cleanupTransactionQuietly( Exception exception ) {
+        try {
+            cleanupTransaction();
+
+        } catch ( Exception ex ) {
+            exception = addSuppressed( ex, exception );
+        }
+
+        return EMUtils.toRuntimeException( exception );
+
+    }
+
+    public RuntimeException cleanupTransactionQuietly() {
+
+        try {
+            cleanupTransaction();
+            return null;
+
+        } catch ( Exception e ) {
+            return EMUtils.toRuntimeException( e );
+        }
+    }
+
 
     public void cleanupTransaction() {
         cleanupTransaction( null );

@@ -10,13 +10,8 @@ public class EM {
 
     private final static Logger LOGGER = Logger.getLogger( EM.class.getName() );
 
-    public static EntityManager getOrCreateEM( EntityManagerFactory emf ) {
-        EntityManager em = EMF.getEM( emf );
-        return em;
-    }
-
     public static EntityManager getEM( EntityManagerFactory emf ) {
-        return getOrCreateEM( emf );
+        return EMF.getEM( emf );
     }
 
     public static EntityManager getEM() {
@@ -69,7 +64,7 @@ public class EM {
     public static void close( EntityManagerFactory emf ) {
 
         if ( hasEM( emf ) ) {
-            EntityManager em = getOrCreateEM( emf );
+            EntityManager em = getEM( emf );
             cleanupTransaction( em );
         }
     }
@@ -82,7 +77,7 @@ public class EM {
     public static void close( EntityManagerFactory emf, CloseHandle handle ) {
 
         if ( hasEM( emf ) ) {
-            EntityManager em = getOrCreateEM( emf );
+            EntityManager em = getEM( emf );
             cleanupTransaction( em, handle );
         }
     }
@@ -95,10 +90,9 @@ public class EM {
 
     public static <X extends Exception> void updateInTransaction( EntityManagerFactory emf, TransactionUpdater<X> updater ) throws X {
 
-        EntityManager em = null;
+        EntityManager em = beginTransaction( emf );
 
         try {
-            em = beginTransaction( emf );
 
             updater.update( em );
 
@@ -115,10 +109,9 @@ public class EM {
 
     public static <R, X extends Exception> R executeInTransaction( EntityManagerFactory emf, TransactionExecutor<R, X> executor ) throws X {
 
-        EntityManager em = null;
+        EntityManager em = beginTransaction( emf );
 
         try {
-            em = beginTransaction( emf );
 
             R result = executor.execute( em );
 
@@ -147,7 +140,8 @@ public class EM {
     }
 
     public static EntityManager beginTransaction( EntityManagerFactory emf ) {
-        EMContext ctx = getEMContext( emf );
+
+        EMContext ctx = EMF.getOrCreateEMContext( emf );
         return ctx.beginTransaction();
     }
 
@@ -157,6 +151,10 @@ public class EM {
     }
 
     public static void rollbackTransaction( EntityManager em ) {
+
+        if ( em == null ) {
+            return;
+        }
 
         EMContext ctx = getContextForEM( em );
         ctx.rollbackTransaction();
@@ -198,19 +196,19 @@ public class EM {
     }
 
     public static void cleanupTransaction( EntityManager em ) {
+        if ( em == null ) {
+            return;
+        }
+
         EMContext ctx = getContextForEM( em );
         ctx.cleanupTransaction();
     }
 
     public static RuntimeException cleanupTransaction( EntityManager em, Exception exception ) {
 
-        try {
-            EM.cleanupTransaction( em );
-
-        } catch ( Exception ex ) {
-            exception = addSuppressed( ex, exception );
-        }
-        return EMUtils.toRuntimeException( exception );
+        EMContext ctx = getContextForEM( em );
+        RuntimeException e = ctx.cleanupTransactionQuietly( exception );
+        return e;
     }
 
     public static RuntimeException cleanupTransactionSilently( EntityManager em ) {
@@ -272,12 +270,6 @@ public class EM {
         }
 
         EMUtils.throwAsRuntimeIfException( exception );
-    }
-
-    public static EMContext getEMContext( EntityManagerFactory emf ) {
-        EMFContainer container = EMF.getOrCreateContainer();
-        EMContext ctx = container.getOrCreateEMContext( emf );
-        return ctx;
     }
 
     protected static EMContext getContextForEM( EntityManager em ) {
