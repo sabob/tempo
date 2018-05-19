@@ -1,5 +1,7 @@
 package za.sabob.tempo;
 
+import javax.persistence.*;
+
 public class EMConfig {
 
     private static final ThreadLocal<Boolean> JOINABLE_TRANSACTIONS = new ThreadLocal<>();
@@ -27,5 +29,13 @@ public class EMConfig {
         }
         return value;
 
+    }
+
+    public static void registerDefault( EntityManagerFactory emf ) {
+        EMF.registerDefault( emf );
+    }
+
+    public static EntityManagerFactory getDefault() {
+        return EMF.getDefault();
     }
 }
