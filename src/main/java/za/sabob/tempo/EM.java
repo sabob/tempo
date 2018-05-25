@@ -160,7 +160,7 @@ public class EM {
         ctx.rollbackTransaction();
     }
 
-    public static RuntimeException rollbackTransactionSilently( EntityManager em ) {
+    public static RuntimeException rollbackTransactionQuietly( EntityManager em ) {
 
         try {
             rollbackTransaction( em );
@@ -211,7 +211,7 @@ public class EM {
         return e;
     }
 
-    public static RuntimeException cleanupTransactionSilently( EntityManager em ) {
+    public static RuntimeException cleanupTransactionQuietly( EntityManager em ) {
 
         try {
             cleanupTransaction( em );
@@ -222,7 +222,7 @@ public class EM {
         }
     }
 
-    public static RuntimeException cleanupTransactionSilently( EntityManager em, CloseHandle closeHandle ) {
+    public static RuntimeException cleanupTransactionQuietly( EntityManager em, CloseHandle closeHandle ) {
 
         try {
             cleanupTransaction( em, closeHandle );
@@ -233,7 +233,7 @@ public class EM {
         }
     }
 
-    public static RuntimeException cleanupTransactionSilently( EntityManager em, Exception exception ) {
+    public static RuntimeException cleanupTransactionQuietly( EntityManager em, Exception exception ) {
 
         try {
 

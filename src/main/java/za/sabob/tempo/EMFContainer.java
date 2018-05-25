@@ -56,9 +56,9 @@ public class EMFContainer {
     }
 
     public void forceClose() {
-        Exception ex1 = cleanupTransactionsSilently();
+        Exception ex1 = cleanupTransactionsQuietly();
 
-        // No need to close below since cleanupTransactionsSilently already closes the EM
+        // No need to close below since cleanupTransactionsQuietly already closes the EM
         //Exception ex2 = closeQuietly();
         //ex2 = EMUtils.addSuppressed( ex2, ex1 );
 
@@ -66,11 +66,11 @@ public class EMFContainer {
     }
 
     public void cleanupTransactions() {
-        RuntimeException ex = cleanupTransactionsSilently();
+        RuntimeException ex = cleanupTransactionsQuietly();
         EMUtils.throwAsRuntimeIfException( ex );
     }
 
-    public RuntimeException cleanupTransactionsSilently() {
+    public RuntimeException cleanupTransactionsQuietly() {
 
         Exception exception = null;
 

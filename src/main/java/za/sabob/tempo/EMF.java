@@ -92,13 +92,13 @@ public final class EMF {
     }
 
     public static void cleanupTransactions() {
-        RuntimeException ex = cleanupTransactionsSilently();
+        RuntimeException ex = cleanupTransactionsQuietly();
         EMUtils.throwAsRuntimeIfException( ex );
     }
 
-    public static RuntimeException cleanupTransactionsSilently() {
+    public static RuntimeException cleanupTransactionsQuietly() {
 
-        RuntimeException ex = getOrCreateContainer().cleanupTransactionsSilently();
+        RuntimeException ex = getOrCreateContainer().cleanupTransactionsQuietly();
 
         EMF.setContainer( null );
         return ex;
