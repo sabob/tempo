@@ -134,7 +134,7 @@ public final class EMF {
             Exception exception = null;
 
             try {
-                EM.closeAll();
+                closeContainer( emf );
 
             } catch ( RuntimeException e ) {
                 exception = EMUtils.addSuppressed( e, exception );
@@ -168,6 +168,15 @@ public final class EMF {
             return false;
         } else {
             return true;
+        }
+    }
+
+    public static void closeContainer( EntityManagerFactory emf ) {
+        if ( EMF.hasContainer() ) {
+            EMFContainer container = EMF.getOrCreateContainer();
+
+            RuntimeException e = container.closeQuietly( emf );
+            EMUtils.throwAsRuntimeIfException( e );
         }
     }
 }

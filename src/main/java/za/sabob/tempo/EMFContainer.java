@@ -101,4 +101,19 @@ public class EMFContainer {
         }
         return EMUtils.toRuntimeException( exception );
     }
+
+    public RuntimeException closeQuietly( EntityManagerFactory emf ) {
+        Exception exception = null;
+
+        EMContext ctx = getEMContext( emf );
+
+        try {
+            ctx.forceClose();
+
+        } catch ( Exception e ) {
+            exception = e;
+        }
+
+        return EMUtils.toRuntimeException( exception );
+    }
 }
