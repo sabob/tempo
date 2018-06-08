@@ -16,7 +16,7 @@ public final class EMF {
 
     private static EntityManagerFactory defaultEMF;
 
-    private EMF() {
+    public EMF() {
     }
 
     public static void registerDefault( EntityManagerFactory emf ) {
