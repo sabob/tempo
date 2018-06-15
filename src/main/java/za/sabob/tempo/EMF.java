@@ -58,7 +58,11 @@ public final class EMF {
         }
 
         return emf;
+    }
 
+    public static void setEM( EntityManagerFactory emf, EntityManager em ) {
+        EMFContainer container = EMF.getOrCreateContainer();
+        EMContext ctx = container.createEMContext( emf, em );
     }
 
     public static EntityManager getEM() {
@@ -74,7 +78,7 @@ public final class EMF {
     }
 
     public static EMContext getOrCreateEMContext( EntityManagerFactory emf ) {
-        EMFContainer container = EMF.getOrCreateContainer();
+        EMFContainer container = getOrCreateContainer();
         EMContext ctx = container.getOrCreateEMContext( emf );
         return ctx;
     }
@@ -89,6 +93,14 @@ public final class EMF {
             setContainer( container );
         }
         return container;
+    }
+
+    static void removeEMF( EntityManagerFactory emf ) {
+
+        if ( hasContainer() ) {
+            EMFContainer container = getOrCreateContainer();
+            container.removeEMContext( emf );
+        }
     }
 
     public static void cleanupTransactions() {
@@ -162,6 +174,15 @@ public final class EMF {
         CONTAINER_HOLDER.set( container );
     }
 
+    public static boolean isEmpty() {
+        if ( hasContainer() ) {
+            EMFContainer container = getOrCreateContainer();
+            return container.isEmpty();
+        }
+        return true;
+
+    }
+
     public static boolean hasContainer() {
         EMFContainer container = CONTAINER_HOLDER.get();
         if ( container == null ) {
@@ -172,8 +193,14 @@ public final class EMF {
     }
 
     public static void closeContainer( EntityManagerFactory emf ) {
-        if ( EMF.hasContainer() ) {
-            EMFContainer container = EMF.getOrCreateContainer();
+
+        if ( hasContainer() ) {
+
+            EMFContainer container = getOrCreateContainer();
+
+            if ( container.isEmpty() ) {
+                return;
+            }
 
             RuntimeException e = container.closeQuietly( emf );
             EMUtils.throwAsRuntimeIfException( e );

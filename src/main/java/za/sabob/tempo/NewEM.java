@@ -13,6 +13,7 @@ class NewEM {
     public <X extends Exception> void doInTransactionInNewEM( EntityManagerFactory emf, TransactionUpdater<X> updater ) throws X {
 
         EntityManager em = beginTransaction( emf );
+        Exception exception = null;
 
         try {
             updater.update( em );
@@ -20,18 +21,20 @@ class NewEM {
             commitTransaction( em );
 
         } catch ( Exception ex ) {
-            throw rollbackTransaction( em, ex );
+            exception = rollbackTransactionAndReturnError( em, ex );
+            throw (X) exception;
 
         } finally {
-
-            cleanupTransactionAndClose( em );
+            //exception = cleanupTransactionQuietly( em, exception );
+            //EMUtils.throwAsRuntimeIfException( exception );
+            cleanupTransactionAndThrowIfError( em, exception );
         }
-
     }
 
     public <R, X extends Exception> R getInTransactionInNewEM( EntityManagerFactory emf, TransactionExecutor<R, X> executor ) throws X {
 
         EntityManager em = beginTransaction( emf );
+        Exception exception = null;
 
         try {
 
@@ -42,11 +45,16 @@ class NewEM {
             return result;
 
         } catch ( Exception ex ) {
-            throw rollbackTransaction( em, ex );
+            //exception = ex;
+            //throw rollbackTransaction( em, ex );
+
+            exception = rollbackTransactionAndReturnError( em, ex );
+            throw (X) exception;
 
         } finally {
-
-            cleanupTransactionAndClose( em );
+            //exception = cleanupTransactionQuietly( em, exception );
+            //EMUtils.throwAsRuntimeIfException( exception );
+            cleanupTransactionAndThrowIfError( em, exception );
         }
     }
 
@@ -72,6 +80,12 @@ class NewEM {
     }
 
     public void commitTransaction( EntityManager em ) {
+
+        if ( em.getTransaction().getRollbackOnly() ) {
+            rollbackTransaction( em );
+            return;
+        }
+
         em.getTransaction().commit();
     }
 
@@ -86,7 +100,7 @@ class NewEM {
         return em;
     }
 
-    public void cleanupTransactionAndClose( EntityManager em ) {
+    public void cleanupTransaction( EntityManager em ) {
 
         if ( em == null ) {
             return;
@@ -98,17 +112,11 @@ class NewEM {
 
             exception = cleanupTransactionQuietly( em, null );
 
-            if ( em.isOpen() ) {
-                em.close();
-
-            } else {
-                LOGGER.warning( "EntityManager is already closed" );
-            }
-
         } catch ( Exception ex ) {
 
             LOGGER.log( Level.SEVERE, "Error closing EntityManager", ex );
             exception = addSuppressed( ex, exception );
+            throw EMUtils.toRuntimeException( exception );
 
         } finally {
         }
@@ -116,9 +124,14 @@ class NewEM {
         EMUtils.throwAsRuntimeIfException( exception );
     }
 
+    public void cleanupTransaction( EntityManager em, Exception exception ) {
+        RuntimeException e = cleanupTransactionQuietly( em, exception );
+        EMUtils.throwAsRuntimeIfException( e );
+    }
+
     public RuntimeException cleanupTransactionQuietly( EntityManager em, Exception exception ) {
         try {
-            cleanupTransaction( em );
+            performCleanupTransaction( em );
 
         } catch ( Exception ex ) {
             exception = addSuppressed( ex, exception );
@@ -128,7 +141,7 @@ class NewEM {
 
     }
 
-    void cleanupTransaction( EntityManager em ) {
+    void performCleanupTransaction( EntityManager em ) {
 
         Exception exception = null;
 
@@ -215,6 +228,40 @@ class NewEM {
         } else {
             LOGGER.warning( "EntityManager is already closed" );
         }
+    }
+
+    <X extends Throwable> X rollbackTransactionAndReturnError( EntityManager em, Exception exception ) {
+
+        if ( exception == null ) {
+            IllegalArgumentException ex = new IllegalArgumentException( "exception cannot be null" );
+            throw ex;
+        }
+
+        try {
+
+            rollbackTransaction( em );
+
+        } catch ( Exception e ) {
+            exception = addSuppressed( e, exception );
+        }
+
+        //EMUtils.throwIfException( exception );
+        return (X) exception;
+    }
+
+    public void cleanupTransactionAndThrowIfError( EntityManager em, Exception exception ) {
+
+        try {
+
+            cleanupTransaction( em );
+
+        } catch ( Exception e ) {
+            exception = addSuppressed( e, exception );
+            //return EMUtils.toRuntimeException( exception );
+            EMUtils.throwIfException( exception );
+        }
+
+        EMUtils.throwIfException( exception );
     }
 
 }

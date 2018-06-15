@@ -19,8 +19,8 @@ public class TestSuite {
         try {
         TestListenerAdapter tla = new TestSuite.MyListener();
         TestNG testng = new TestNG();
-        //testng.setTestClasses( new Class[] { OpenInViewTest.class } );
-        //testng.setTestClasses( new Class[] { BasicEMTest.class, OpenInViewTest.class } );
+            //testng.setTestClasses( new Class[] { OpenInViewTest.class } );
+            //testng.setTestClasses( new Class[] { BasicEMTest.class, OpenInViewTest.class } );
         //testng.setTestClasses( new Class[] { BasicEMTest.class } );
         List suites = Lists.newArrayList();
 

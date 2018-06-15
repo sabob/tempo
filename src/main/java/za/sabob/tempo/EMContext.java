@@ -98,6 +98,11 @@ public class EMContext {
 
     public void commitTransaction() {
 
+        if ( em.getTransaction().getRollbackOnly() ) {
+            rollbackTransaction();
+            return;
+        }
+
         if ( !canCommit() ) {
             return;
         }
@@ -112,11 +117,29 @@ public class EMContext {
     public void cleanupTransaction( CloseHandle closeHandle ) {
         decrementCallstack();
 
-        if ( !canClose() ) {
-            return;
-        }
+        if ( canClose() ) {
 
-        performCleanupTransaction( closeHandle );
+            performCleanupTransaction( closeHandle );
+
+        } else {
+
+            // cannot close because EntityManagers is still used, but if the passed in handle is a valid handle, we assume something is wrong
+            // and that the open EntityManagers in the callstack should have been cleaned up
+            if ( isMatchingHandleAnObject( closeHandle ) ) {
+
+                // TODO close the EM anyway in order to stop leaks
+                RuntimeException re = performCleanupTransactionQuietly( closeHandle );
+
+
+                IllegalStateException ise = new IllegalStateException(
+                    "The CloseHandle used to cleanupTransaction is the same CoseHandle used with EM.openInView(), however"
+                    + " there are EntityManagers that are still busy with Transactions. These transactions must be committed or rolled back." );
+
+                Exception ex = EMUtils.addSuppressed( ise, re );
+                EMUtils.throwAsRuntimeIfException( ex );
+            }
+
+        }
     }
 
     public RuntimeException cleanupTransactionQuietly( Exception exception ) {
@@ -206,15 +229,43 @@ public class EMContext {
 
     public void close( CloseHandle handle ) {
 
-        if ( this.closeHandle == handle ) {
+        if ( isMatchingHandle( handle ) ) {
 
             performClose();
 
         }
     }
 
+    boolean isMatchingHandleAnObject( CloseHandle handle ) {
+
+        if ( handle == null ) {
+            return false;
+        }
+
+        if ( !(handle instanceof CloseHandle) ) {
+            return false;
+        }
+
+        return this.closeHandle == handle;
+    }
+
+    boolean isMatchingHandle( CloseHandle handle ) {
+        return this.closeHandle == handle;
+    }
+
     public void close() {
         close( null );
+    }
+
+    RuntimeException performCleanupTransactionQuietly( CloseHandle closeHandle ) {
+
+        try {
+            performCleanupTransaction( closeHandle );
+
+        } catch ( Exception e ) {
+            return EMUtils.toRuntimeException( e );
+        }
+        return null;
     }
 
     void performCleanupTransaction( CloseHandle closeHandle ) {
@@ -255,7 +306,7 @@ public class EMContext {
 
         if ( em.isOpen() ) {
             em.close();
-            cleanupOpenInView();
+            cleanupResources();
 
         } else {
             LOGGER.warning( "EntityManager is already closed" );
@@ -264,9 +315,47 @@ public class EMContext {
         this.closeHandle = null;
     }
 
+    void cleanupResources() {
+        EMF.removeEMF( this.emf );
+        cleanupOpenInView();
+    }
+
     void cleanupOpenInView() {
+        cleanupOpenInView( emf );
+    }
+
+    static void cleanupOpenInView( EntityManagerFactory emf ) {
         Map<EntityManagerFactory, CloseHandle> map = getOpenInViewMap();
         map.remove( emf );
+    }
+
+    static void cleanupOpenInView( CloseHandle handle ) {
+
+        if ( handle == null ) {
+            return;
+        }
+
+        EntityManagerFactory emf = getEMFForCloseHandle( handle );
+        if ( emf == null ) {
+            return;
+        }
+
+        cleanupOpenInView( emf );
+    }
+
+    static EntityManagerFactory getEMFForCloseHandle( CloseHandle handle ) {
+        Map<EntityManagerFactory, CloseHandle> map = getOpenInViewMap();
+        for ( Map.Entry<EntityManagerFactory, CloseHandle> entry : map.entrySet() ) {
+
+            CloseHandle value = entry.getValue();
+
+            if ( value == handle ) {
+                return entry.getKey();
+            }
+        }
+
+        return null;
+
     }
 
     void forceCleanupTransaction() {

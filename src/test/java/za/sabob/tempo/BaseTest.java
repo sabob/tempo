@@ -24,7 +24,7 @@ public class BaseTest {
 
     public void removePersons() {
 
-        EM.updateInTransaction( em -> {
+        EM.doInTransaction( em -> {
 
             em.createQuery( "delete from Person" ).executeUpdate();
 

@@ -1,13 +1,16 @@
-package za.sabob.tempo;
+package za.sabob.tempo.openinview;
 
 import javax.persistence.*;
 import org.testng.*;
 import org.testng.annotations.*;
+import za.sabob.tempo.BaseTest;
+import za.sabob.tempo.EM;
+import za.sabob.tempo.EMF;
 import za.sabob.tempo.util.*;
 
-public class OpenInViewTest extends BaseTest {
+public class CloseOpenInViewTest extends BaseTest {
 
-    public OpenInViewTest() {
+    public CloseOpenInViewTest() {
     }
 
     @BeforeMethod

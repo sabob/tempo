@@ -30,16 +30,31 @@ public class EMFContainer {
         return ctx;
     }
 
-    public boolean hasEMContext( EntityManagerFactory emf ) {
+    void removeEMContext( EntityManagerFactory emf ) {
+        if ( !hasEMContext( emf ) ) {
+            throw new IllegalStateException( "Tempo has no EntityManager for the given EntityManagerFactory. Cannot perform the remove operation." );
+        }
+        EMContext ctx = emByFactory.remove( emf );
+        contextByEM.remove( ctx.getEM() );
+    }
 
+    public boolean hasEMContext( EntityManagerFactory emf ) {
         return emByFactory.get( emf ) != null;
+    }
+
+    public EMContext createEMContext( EntityManagerFactory emf, EntityManager em ) {
+        if ( hasEMContext( emf ) ) {
+            throw new IllegalStateException(
+                "Tempo has already created an EntityManager for the given EntityManagerFactory. Close the current EntityManager first." );
+        }
+
+        CloseHandle closeHandle = EMContext.getOpenInViewHandle( emf ); // In case there was a openInView call made, associate that closeHandle with the EMContext
+        return new EMContext( em, emf, closeHandle );
     }
 
     protected EMContext createEMContext( EntityManagerFactory emf ) {
         EntityManager em = emf.createEntityManager();
-        CloseHandle closeHandle = EMContext.getOpenInViewHandle( emf ); // In case there was a openInView call made, associate that closeHandle with the EMContext
-
-        return new EMContext( em, emf, closeHandle );
+        return createEMContext( emf, em );
     }
 
     protected EMContext getEMContext( EntityManagerFactory emf ) {
@@ -106,6 +121,10 @@ public class EMFContainer {
         Exception exception = null;
 
         EMContext ctx = getEMContext( emf );
+
+        if ( ctx == null ) {
+            throw new IllegalStateException( "Tempo has no EntityManager registered for the given EntityManagerFactory" );
+        }
 
         try {
             ctx.forceClose();

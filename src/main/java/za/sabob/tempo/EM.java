@@ -10,6 +10,93 @@ public class EM {
 
     private final static Logger LOGGER = Logger.getLogger( EM.class.getName() );
 
+    public static <X extends Exception> void doInTransaction( TransactionUpdater<X> executor ) throws X {
+
+        EntityManagerFactory emf = EMF.getDefault();
+        doInTransaction( emf, executor );
+    }
+
+    public static <X extends Exception> void doInTransaction( EntityManagerFactory emf, TransactionUpdater<X> updater ) throws X {
+
+        EntityManager em = beginTransaction( emf );
+        Exception exception = null;
+
+        try {
+
+            updater.update( em );
+
+            commitTransaction( em );
+
+        } catch ( Exception ex ) {
+            //throw rollbackTransaction( em, ex );
+            exception = rollbackTransactionAndReturnError( em, ex );
+            throw (X) exception;
+
+        } finally {
+            cleanupTransactionAndThrowIfError( em, exception );
+//            RuntimeException re = cleanupTransactionQuietly( em, exception );
+//            if ( re != null ) {
+//                EMUtils.throwIfException( re );
+//            }
+        }
+    }
+
+    public static <X extends Exception> void doInTransactionInNewEM( TransactionUpdater<X> updater ) throws X {
+
+        EntityManagerFactory emf = EMF.getDefault();
+        doInTransactionInNewEM( emf, updater );
+    }
+
+    public static <X extends Exception> void doInTransactionInNewEM( EntityManagerFactory emf, TransactionUpdater<X> updater ) throws X {
+
+        NewEM newEm = new NewEM();
+        newEm.doInTransactionInNewEM( emf, updater );
+    }
+
+    public static <R, X extends Exception> R getInTransaction( EntityManagerFactory emf, TransactionExecutor<R, X> executor ) throws X {
+
+        Exception exception = null;
+        EntityManager em = beginTransaction( emf );
+
+        try {
+
+            R result = executor.execute( em );
+
+            commitTransaction( em );
+
+            return result;
+
+        } catch ( Exception ex ) {
+//            exception = ex;
+//            throw rollbackTransaction( em, ex );
+            exception = rollbackTransactionAndReturnError( em, ex );
+            throw (X) exception;
+
+        } finally {
+            //exception = cleanupTransactionQuietly( em, exception );
+            //EMUtils.throwAsRuntimeIfException( exception );
+            cleanupTransactionAndThrowIfError( em, exception );
+        }
+    }
+
+    public static <R, X extends Exception> R getInTransaction( TransactionExecutor<R, X> executor ) throws X {
+
+        EntityManagerFactory emf = EMF.getDefault();
+        return getInTransaction( emf, executor );
+    }
+
+    public static <R, X extends Exception> R getInTransactionInNewEM( TransactionExecutor<R, X> executor ) throws X {
+
+        EntityManagerFactory emf = EMF.getDefault();
+        return getInTransactionInNewEM( emf, executor );
+    }
+
+    public static <R, X extends Exception> R getInTransactionInNewEM( EntityManagerFactory emf, TransactionExecutor<R, X> executor ) throws X {
+
+        NewEM newEm = new NewEM();
+        return newEm.getInTransactionInNewEM( emf, executor );
+    }
+
     public static EntityManager getEM( EntityManagerFactory emf ) {
         return EMF.getEM( emf );
     }
@@ -79,88 +166,16 @@ public class EM {
         if ( hasEM( emf ) ) {
             EntityManager em = getEM( emf );
             cleanupTransaction( em, handle );
+
+        } else {
+            cleanupResources( handle );
+            //System.out.println( "EM.close caled but EMF has no EM" );
         }
-    }
-
-    public static <X extends Exception> void doInTransaction( TransactionUpdater<X> executor ) throws X {
-
-        EntityManagerFactory emf = EMF.getDefault();
-        doInTransaction( emf, executor );
-    }
-
-    public static <X extends Exception> void doInTransaction( EntityManagerFactory emf, TransactionUpdater<X> updater ) throws X {
-
-        EntityManager em = beginTransaction( emf );
-
-        try {
-
-            updater.update( em );
-
-            commitTransaction( em );
-
-        } catch ( Exception ex ) {
-            throw rollbackTransaction( em, ex );
-
-        } finally {
-
-            cleanupTransaction( em );
-        }
-    }
-
-    public static <X extends Exception> void doInTransactionInNewEM( TransactionUpdater<X> updater ) throws X {
-
-        EntityManagerFactory emf = EMF.getDefault();
-        doInTransactionInNewEM( emf, updater );
-    }
-
-    public static <X extends Exception> void doInTransactionInNewEM( EntityManagerFactory emf, TransactionUpdater<X> updater ) throws X {
-
-        NewEM newEm = new NewEM();
-        newEm.doInTransactionInNewEM( emf, updater );
-    }
-
-    public static <R, X extends Exception> R getInTransaction( EntityManagerFactory emf, TransactionExecutor<R, X> executor ) throws X {
-
-        EntityManager em = beginTransaction( emf );
-
-        try {
-
-            R result = executor.execute( em );
-
-            commitTransaction( em );
-
-            return result;
-
-        } catch ( Exception ex ) {
-            throw rollbackTransaction( em, ex );
-
-        } finally {
-
-            cleanupTransaction( em );
-        }
-    }
-
-    public static <R, X extends Exception> R getInTransaction( TransactionExecutor<R, X> executor ) throws X {
-
-        EntityManagerFactory emf = EMF.getDefault();
-        return getInTransaction( emf, executor );
     }
 
     public static EntityManager beginTransaction() {
         EntityManagerFactory emf = EMF.getDefault();
         return beginTransaction( emf );
-    }
-
-    public static <R, X extends Exception> R getInTransactionInNewEM( TransactionExecutor<R, X> executor ) throws X {
-
-        EntityManagerFactory emf = EMF.getDefault();
-        return getInTransactionInNewEM( emf, executor );
-    }
-
-    public static <R, X extends Exception> R getInTransactionInNewEM( EntityManagerFactory emf, TransactionExecutor<R, X> executor ) throws X {
-
-        NewEM newEm = new NewEM();
-        return newEm.getInTransactionInNewEM( emf, executor );
     }
 
     public static EntityManager beginTransaction( EntityManagerFactory emf ) {
@@ -174,8 +189,11 @@ public class EM {
         ctx.commitTransaction();
     }
 
-    public static void rollbackTransaction( EntityManager em ) {
+    public static void setRollbackOnly( EntityManager em ) {
+        em.getTransaction().setRollbackOnly();
+    }
 
+    public static void rollbackTransaction( EntityManager em ) {
         if ( em == null ) {
             return;
         }
@@ -219,6 +237,26 @@ public class EM {
         return result;
     }
 
+    //static X rollbackTransactionAndThrow( EntityManager em, Exception exception ) throws X {
+    static <X extends Throwable> X rollbackTransactionAndReturnError( EntityManager em, Exception exception ) {
+
+        if ( exception == null ) {
+            IllegalArgumentException ex = new IllegalArgumentException( "exception cannot be null" );
+            throw ex;
+        }
+
+        try {
+
+            rollbackTransaction( em );
+
+        } catch ( Exception e ) {
+            exception = addSuppressed( e, exception );
+        }
+
+        //EMUtils.throwIfException( exception );
+        return (X) exception;
+    }
+
     public static void cleanupTransaction( EntityManager em ) {
         if ( em == null ) {
             return;
@@ -228,11 +266,11 @@ public class EM {
         ctx.cleanupTransaction();
     }
 
-    public static RuntimeException cleanupTransaction( EntityManager em, Exception exception ) {
+    public static void cleanupTransaction( EntityManager em, Exception exception ) {
 
         EMContext ctx = getContextForEM( em );
         RuntimeException e = ctx.cleanupTransactionQuietly( exception );
-        return e;
+        EMUtils.throwAsRuntimeIfException( e );
     }
 
     public static RuntimeException cleanupTransactionQuietly( EntityManager em ) {
@@ -257,6 +295,21 @@ public class EM {
         }
     }
 
+    public static void cleanupTransactionAndThrowIfError( EntityManager em, Exception exception ) {
+
+        try {
+
+            cleanupTransaction( em );
+
+        } catch ( Exception e ) {
+            exception = addSuppressed( e, exception );
+            //return EMUtils.toRuntimeException( exception );
+            EMUtils.throwIfException( exception );
+        }
+
+        EMUtils.throwIfException( exception );
+    }
+
     public static RuntimeException cleanupTransactionQuietly( EntityManager em, Exception exception ) {
 
         try {
@@ -270,13 +323,24 @@ public class EM {
         }
     }
 
-    public static void cleanupTransaction( EntityManager em, CloseHandle closeHandle ) {
+    public static RuntimeException cleanupTransactionQuietly( EntityManager em, Exception exception, CloseHandle closeHandle ) {
 
+        try {
+
+            cleanupTransaction( em, closeHandle );
+            return EMUtils.toRuntimeException( exception );
+
+        } catch ( Exception e ) {
+            exception = addSuppressed( e, exception );
+            return EMUtils.toRuntimeException( exception );
+        }
+    }
+
+    public static void cleanupTransaction( EntityManager em, Exception exception, CloseHandle closeHandle ) {
         if ( em == null ) {
             return;
         }
 
-        Exception exception = null;
         EMContext ctx = getContextForEM( em );
 
         try {
@@ -289,19 +353,90 @@ public class EM {
             exception = addSuppressed( ex, exception );
 
         } finally {
-            RuntimeException ex = ctx.closeQuietly( closeHandle );
-            exception = addSuppressed( ex, exception );
+            //RuntimeException ex = ctx.closeQuietly( closeHandle );
+            //exception = addSuppressed( ex, exception );
+            EMUtils.throwAsRuntimeIfException( exception );
         }
+    }
 
-        EMUtils.throwAsRuntimeIfException( exception );
+    public static void cleanupTransaction( EntityManager em, CloseHandle closeHandle ) {
+        Exception exception = null;
+        cleanupTransaction( em, exception, closeHandle );
+    }
+
+    public static EntityManager createEM() {
+        EntityManagerFactory emf = EMF.getDefault();
+        return createEM( emf );
+    }
+
+    public static EntityManager createEM( EntityManagerFactory emf ) {
+        NewEM newEm = new NewEM();
+        return newEm.createEM( emf );
+    }
+
+    public static EntityManager beginTransactionInNewEM() {
+        EntityManagerFactory emf = EMF.getDefault();
+        return beginTransactionInNewEM( emf );
+
+    }
+
+    public static EntityManager beginTransactionInNewEM( EntityManagerFactory emf ) {
+
+        NewEM newEm = new NewEM();
+        EntityManager em = newEm.beginTransaction( emf );
+        return em;
+    }
+
+    public void rollbackTransactionInNewEM( EntityManager em ) {
+        NewEM newEm = new NewEM();
+        newEm.rollbackTransaction( em );
+    }
+
+    public RuntimeException rollbackTransactionInNewEM( EntityManager em, Exception exception ) {
+        NewEM newEm = new NewEM();
+        return newEm.rollbackTransaction( em, exception );
+    }
+
+    public RuntimeException rollbackTransactionQuietlyInNewEM( EntityManager em, Exception exception ) {
+        NewEM newEm = new NewEM();
+        return newEm.rollbackTransactionQuietly( em, exception );
+    }
+
+    public void cleanupTransactionInNewEM( EntityManager em ) {
+        NewEM newEm = new NewEM();
+        newEm.cleanupTransaction( em );
+    }
+
+    public void cleanupTransactionInNewEM( EntityManager em, Exception ex ) {
+        NewEM newEm = new NewEM();
+        newEm.cleanupTransaction( em, ex );
+    }
+
+    public RuntimeException cleanupTransactionQuietlyInNewEM( EntityManager em, Exception ex ) {
+        NewEM newEm = new NewEM();
+        return newEm.cleanupTransactionQuietly( em, ex );
     }
 
     protected static EMContext getContextForEM( EntityManager em ) {
         EMFContainer container = EMF.getOrCreateContainer();
-        return container.getEMContext( em );
+        EMContext ctx = container.getEMContext( em );
+        ensureContextFound( ctx );
+        return ctx;
     }
 
     protected static CloseHandle createHandle() {
         return new CloseHandle();
+    }
+
+    private static void ensureContextFound( EMContext ctx ) {
+        if ( ctx == null ) {
+            throw new IllegalStateException(
+                "The given EntityManager is not registered with Tempo. This can occur if you created your own EntityManager. Use EM.beginTransaction() instead" );
+        }
+    }
+
+    private static void cleanupResources( CloseHandle handle ) {
+
+        EMContext.cleanupOpenInView( handle );
     }
 }
