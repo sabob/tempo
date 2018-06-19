@@ -123,7 +123,7 @@ public class EMContext {
 
         } else {
 
-            // cannot close because EntityManagers is still used, but if the passed in handle is a valid handle, we assume something is wrong
+            // cannot close because EntityManagers is still active, but if the passed in handle is a valid handle, we assume something is wrong
             // and that the open EntityManagers in the callstack should have been cleaned up
             if ( isMatchingHandleAnObject( closeHandle ) ) {
 

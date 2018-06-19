@@ -148,6 +148,10 @@ public class EM {
         close( emf );
     }
 
+    public static void close( EntityManager em ) {
+        cleanupTransaction( em );
+    }
+
     public static void close( EntityManagerFactory emf ) {
 
         if ( hasEM( emf ) ) {
