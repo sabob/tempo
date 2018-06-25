@@ -10,20 +10,20 @@ public class EM {
 
     private final static Logger LOGGER = Logger.getLogger( EM.class.getName() );
 
-    public static <X extends Exception> void doInTransaction( TransactionUpdater<X> executor ) throws X {
+    public static <X extends Exception> void inTransaction( TransactionalOperation<X> operation ) throws X {
 
         EntityManagerFactory emf = EMF.getDefault();
-        doInTransaction( emf, executor );
+        EM.inTransaction( emf, operation );
     }
 
-    public static <X extends Exception> void doInTransaction( EntityManagerFactory emf, TransactionUpdater<X> updater ) throws X {
+    public static <X extends Exception> void inTransaction( EntityManagerFactory emf, TransactionalOperation<X> operation ) throws X {
 
         EntityManager em = beginTransaction( emf );
         Exception exception = null;
 
         try {
 
-            updater.update( em );
+            operation.run( em );
 
             commitTransaction( em );
 
@@ -41,26 +41,26 @@ public class EM {
         }
     }
 
-    public static <X extends Exception> void doInTransactionInNewEM( TransactionUpdater<X> updater ) throws X {
+    public static <X extends Exception> void inTransactionInNewEM( TransactionalOperation<X> operation ) throws X {
 
         EntityManagerFactory emf = EMF.getDefault();
-        doInTransactionInNewEM( emf, updater );
+        EM.inTransactionInNewEM( emf, operation );
     }
 
-    public static <X extends Exception> void doInTransactionInNewEM( EntityManagerFactory emf, TransactionUpdater<X> updater ) throws X {
+    public static <X extends Exception> void inTransactionInNewEM( EntityManagerFactory emf, TransactionalOperation<X> operation ) throws X {
 
         NewEM newEm = new NewEM();
-        newEm.doInTransactionInNewEM( emf, updater );
+        newEm.inTransactionInNewEM( emf, operation );
     }
 
-    public static <R, X extends Exception> R getInTransaction( EntityManagerFactory emf, TransactionExecutor<R, X> executor ) throws X {
+    public static <R, X extends Exception> R inTransaction( EntityManagerFactory emf, TransactionalQuery<R, X> query ) throws X {
 
         Exception exception = null;
         EntityManager em = beginTransaction( emf );
 
         try {
 
-            R result = executor.execute( em );
+            R result = query.get( em );
 
             commitTransaction( em );
 
@@ -79,22 +79,22 @@ public class EM {
         }
     }
 
-    public static <R, X extends Exception> R getInTransaction( TransactionExecutor<R, X> executor ) throws X {
+    public static <R, X extends Exception> R inTransaction( TransactionalQuery<R, X> query ) throws X {
 
         EntityManagerFactory emf = EMF.getDefault();
-        return getInTransaction( emf, executor );
+        return EM.inTransaction( emf, query );
     }
 
-    public static <R, X extends Exception> R getInTransactionInNewEM( TransactionExecutor<R, X> executor ) throws X {
+    public static <R, X extends Exception> R inTransactionInNewEM( TransactionalQuery<R, X> query ) throws X {
 
         EntityManagerFactory emf = EMF.getDefault();
-        return getInTransactionInNewEM( emf, executor );
+        return getInTransactionInNewEM( emf, query );
     }
 
-    public static <R, X extends Exception> R getInTransactionInNewEM( EntityManagerFactory emf, TransactionExecutor<R, X> executor ) throws X {
+    public static <R, X extends Exception> R getInTransactionInNewEM( EntityManagerFactory emf, TransactionalQuery<R, X> query ) throws X {
 
         NewEM newEm = new NewEM();
-        return newEm.getInTransactionInNewEM( emf, executor );
+        return newEm.inTransactionInNewEM( emf, query );
     }
 
     public static EntityManager getEM( EntityManagerFactory emf ) {

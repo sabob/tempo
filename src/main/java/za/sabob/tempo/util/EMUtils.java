@@ -86,6 +86,13 @@ public class EMUtils {
         }
     }
 
+    public static boolean isRollbackOnly( EntityManager em ) {
+        if ( em.isOpen() && em.getTransaction().isActive() ) {
+            return em.getTransaction().getRollbackOnly();
+        }
+        return false;
+    }
+
 //    public static boolean hasActiveTransaction( EntityManagerFactory emf ) {
 //
 //        if ( EM.hasEM( emf ) ) {

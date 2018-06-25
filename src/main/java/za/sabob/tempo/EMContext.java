@@ -9,6 +9,8 @@ import za.sabob.tempo.util.Stack;
 
 public class EMContext {
 
+    public static boolean AUTO_ROLLBACK_LOGGING_ENABLED = true;
+
     private final static Logger LOGGER = Logger.getLogger( EMContext.class.getName() );
 
     private static final ThreadLocal<Map<EntityManagerFactory, CloseHandle>> OPEN_IN_VIEW_HANDLE_HOLDER
@@ -98,7 +100,7 @@ public class EMContext {
 
     public void commitTransaction() {
 
-        if ( em.getTransaction().getRollbackOnly() ) {
+        if ( EMUtils.isRollbackOnly( em ) ) {
             rollbackTransaction();
             return;
         }
@@ -279,9 +281,11 @@ public class EMContext {
             if ( em.isOpen() ) {
                 if ( em.getTransaction().isActive() ) {
 
-                    Throwable t = new Throwable( "Transaction is still active. Rolling transaction back in order to cleanup" );
-                    LOGGER.log( Level.SEVERE, t.getMessage(), t );
-                    //LOGGER.log( Level.INFO, t.getMessage(), t );
+                    if (AUTO_ROLLBACK_LOGGING_ENABLED) {
+                        Throwable t = new Throwable( "Transaction is still active. Rolling transaction back in order to cleanup" );
+                        LOGGER.log( Level.SEVERE, t.getMessage(), t );
+                    }
+
                     rollbackTransaction();
                 }
 

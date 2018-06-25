@@ -12,9 +12,9 @@ public class ExceptionInLambda extends BaseTest {
 
         try {
 
-            EM.getInTransaction( (em) -> {
+            EM.inTransaction( (em) -> {
 
-                throw new IOException( "IO IO" );
+                if (true) throw new IOException( "IO IO" );
 
             } );
 

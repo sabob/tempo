@@ -10,13 +10,13 @@ class NewEM {
 
     private final static Logger LOGGER = Logger.getLogger( NewEM.class.getName() );
 
-    public <X extends Exception> void doInTransactionInNewEM( EntityManagerFactory emf, TransactionUpdater<X> updater ) throws X {
+    public <X extends Exception> void inTransactionInNewEM( EntityManagerFactory emf, TransactionalOperation<X> operation ) throws X {
 
         EntityManager em = beginTransaction( emf );
         Exception exception = null;
 
         try {
-            updater.update( em );
+            operation.run( em );
 
             commitTransaction( em );
 
@@ -31,14 +31,14 @@ class NewEM {
         }
     }
 
-    public <R, X extends Exception> R getInTransactionInNewEM( EntityManagerFactory emf, TransactionExecutor<R, X> executor ) throws X {
+    public <R, X extends Exception> R inTransactionInNewEM( EntityManagerFactory emf, TransactionalQuery<R, X> query ) throws X {
 
         EntityManager em = beginTransaction( emf );
         Exception exception = null;
 
         try {
 
-            R result = executor.execute( em );
+            R result = query.get( em );
 
             commitTransaction( em );
 
@@ -81,7 +81,7 @@ class NewEM {
 
     public void commitTransaction( EntityManager em ) {
 
-        if ( em.getTransaction().getRollbackOnly() ) {
+        if ( EMUtils.isRollbackOnly( em ) ) {
             rollbackTransaction( em );
             return;
         }

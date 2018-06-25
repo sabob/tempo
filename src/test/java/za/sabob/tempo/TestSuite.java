@@ -13,6 +13,8 @@ public class TestSuite {
 
     public static void main( String[] args ) {
 
+        EMContext.AUTO_ROLLBACK_LOGGING_ENABLED = false;
+
         //EMConfig.setJoinableTransactionsDefault( true );
         //EMConfig.setJoinableTransactions( true );
 
