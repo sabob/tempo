@@ -10,6 +10,8 @@ public class CloseAllOpenTransactions extends BaseTest {
 
     @Test
     public void closeAllTransactionsTest() {
+        EMConfig.ON_AUTO_ROLLBACK_THROW_EXCEPTION = false;
+        EMConfig.ON_AUTO_ROLLBACK_LOG = false;
 
         EntityManager em = EM.beginTransaction();
 
@@ -27,10 +29,16 @@ public class CloseAllOpenTransactions extends BaseTest {
         EM.closeAll();
 
         Assert.assertFalse( em.isOpen() );// attempting a second cleanup won't work. EM is still open because no handle was passed to cleanup
+
+        EMConfig.ON_AUTO_ROLLBACK_THROW_EXCEPTION = true;
+        EMConfig.ON_AUTO_ROLLBACK_LOG = true;
     }
 
     @Test
     public void closeAllWillCloseOpenInViewTest() {
+
+        EMConfig.ON_AUTO_ROLLBACK_THROW_EXCEPTION = false;
+        EMConfig.ON_AUTO_ROLLBACK_LOG = false;
 
         CloseHandle handle = EM.openInView();
 
@@ -49,5 +57,8 @@ public class CloseAllOpenTransactions extends BaseTest {
         EM.closeAll();
 
         Assert.assertFalse( em.isOpen() );// attempting a second cleanup won't work. EM is still open because no handle was passed to cleanup
+
+        EMConfig.ON_AUTO_ROLLBACK_THROW_EXCEPTION = true;
+        EMConfig.ON_AUTO_ROLLBACK_LOG = true;
     }
 }

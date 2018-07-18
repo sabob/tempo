@@ -19,7 +19,6 @@ public class BaseTest {
 
         EntityManagerFactory emf = TestUtils.createEntityManagerFactory();
         EMF.registerDefault( emf );
-
     }
 
     public void removePersons() {

@@ -3,9 +3,12 @@ package za.sabob.tempo.util;
 import java.net.*;
 import java.nio.file.*;
 import java.sql.*;
+import java.util.*;
 import javax.persistence.*;
 import javax.sql.*;
 import org.apache.derby.jdbc.*;
+import za.sabob.tempo.*;
+import za.sabob.tempo.domain.*;
 
 public class TestUtils {
 
@@ -61,6 +64,12 @@ public class TestUtils {
             throw new RuntimeException( ex );
         }
 
+    }
+
+    public static List<Person> findAllPersons() {
+        Query query = EM.getEM().createQuery( "from Person" );
+        List<Person> persons = query.getResultList();
+        return persons;
     }
 
     public static void main( String[] args ) throws Exception {

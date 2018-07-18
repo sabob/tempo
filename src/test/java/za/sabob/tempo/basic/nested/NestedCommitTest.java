@@ -1,6 +1,5 @@
 package za.sabob.tempo.basic.nested;
 
-import java.util.logging.*;
 import javax.persistence.*;
 import org.testng.*;
 import org.testng.annotations.*;
@@ -8,6 +7,10 @@ import za.sabob.tempo.*;
 import za.sabob.tempo.domain.*;
 
 public class NestedCommitTest extends BaseTest {
+
+    public NestedCommitTest() {
+        EMConfig.ON_AUTO_ROLLBACK_LOG = false;
+    }
 
     @Test
     public void nestedCommitTest() {
@@ -21,23 +24,36 @@ public class NestedCommitTest extends BaseTest {
         person.setName( "Test" );
         em.persist( person );
 
-        EM.commitTransaction( em ); // ignored
-        EM.cleanupTransaction( em ); // callstack is popped but EM not closed
+        EM.commitTransaction( em ); // ignored callstack is popped only
+        EM.cleanupTransaction( em ); // ignored
         Assert.assertTrue( em.isOpen() );
         Assert.assertTrue( em.getTransaction().isActive() );
 
-        Level level = Logger.getLogger( EMContext.class.getName() ).getLevel();
-
-        Logger.getLogger( EMContext.class.getName() ).setLevel( Level.OFF ); // switch off logging for the next statement because it will log an error since
-        // the transaction is still in progress.
-
-        EM.cleanupTransaction( em ); // this will rollback, log an exception and close connection
-
-        // Switch back logging
-        Logger.getLogger( EMContext.class.getName() ).setLevel( level );
+        EM.rollbackTransaction( em );
+        EM.cleanupTransaction( em );
+        Assert.assertFalse(em.isOpen() );
+        Assert.assertFalse(em.getTransaction().isActive() );
 
         em = EM.getEM();
         Person savedPerson = em.find( Person.class, person.getId() );
         Assert.assertNull( savedPerson );
+    }
+
+    @Test
+    public void nestedCommitTest2() {
+
+        EntityManager em = EM.beginTransaction();
+        EM.commitTransaction( em );
+        EM.cleanupTransaction( em );
+
+        em = EM.beginTransaction();
+
+        Assert.assertTrue(em.getTransaction().isActive() );
+        EM.commitTransaction( em );
+        Assert.assertFalse(em.getTransaction().isActive() );
+
+        Assert.assertTrue( em.isOpen());
+        EM.cleanupTransaction( em );
+        Assert.assertFalse( em.isOpen());
     }
 }

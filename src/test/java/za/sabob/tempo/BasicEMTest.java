@@ -44,14 +44,15 @@ public class BasicEMTest extends BaseTest {
         EM.commitTransaction( em ); // should be ignored
         EM.cleanupTransaction( em );//pop context but no cleanup
 
-        //EM.rollbackTransaction( em ); // should be ignored
-        em.getTransaction().rollback();
+        EM.rollbackTransaction( em ); // should be ignored
+        //em.getTransaction().rollback();
         EM.cleanupTransaction( em );// cleanup occurs
 
         em = EM.getEM();
         Person savedPerson = em.find( Person.class, person.getId() );
         Assert.assertNull( savedPerson );
         EM.cleanupTransaction( em );
+        Assert.assertFalse( em.isOpen() );
     }
 
     @Test
@@ -109,19 +110,27 @@ public class BasicEMTest extends BaseTest {
     @Test
     public void testNestedBeginRollbackOnSecondCall() {
 
+        EMContext ctx = EMF.getOrCreateEMContext( EMF.getDefault() );
+
         EntityManager em = EM.beginTransaction();
         em = EM.beginTransaction();
+
+        System.out.println( "CS : " + ctx.getCallstackSize());
 
         //EM.commitTransaction( em );
         Person person = new Person();
         person.setName( "Test" );
         em.persist( person );
 
+        System.out.println( "CS : " + ctx.getCallstackSize());
         EM.rollbackTransaction( em ); // should be ignored
+        System.out.println( "CS : " + ctx.getCallstackSize());
 
         EM.cleanupTransaction( em );
 
+        System.out.println( "CS : " + ctx.getCallstackSize());
         EM.rollbackTransaction( em ); // should work now
+        System.out.println( "CS : " + ctx.getCallstackSize());
 
         EM.cleanupTransaction( em ); // Should be closed now
         Assert.assertFalse( em.isOpen() );
