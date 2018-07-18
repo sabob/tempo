@@ -9,9 +9,7 @@ import za.sabob.tempo.util.Stack;
 
 public class EMContext {
 
-    public static boolean AUTO_ROLLBACK_LOGGING_ENABLED = true;
-
-    private final static Logger LOGGER = Logger.getLogger( EMContext.class.getName() );
+     private final static Logger LOGGER = Logger.getLogger( EMContext.class.getName() );
 
     private static final ThreadLocal<Map<EntityManagerFactory, CloseHandle>> OPEN_IN_VIEW_HANDLE_HOLDER
         = new ThreadLocal<Map< EntityManagerFactory, CloseHandle>>();
@@ -43,30 +41,30 @@ public class EMContext {
     public EntityManager beginTransaction() {
         try {
 
-        if ( getEM().getTransaction().isActive() ) {
+            if ( getEM().getTransaction().isActive() ) {
 
-            if ( !EMConfig.isJoinableTransactions() ) {
-                throw new IllegalStateException(
-                    "You are not allowed to start nested transactions for the same EntityManagerFactory. An EntityManager is already busy with a transaction."
-                    + " To allow transactions to join set EMConfig.setJoinableTransactions( true )" );
+                if ( !EMConfig.isJoinableTransactions() ) {
+                    throw new IllegalStateException(
+                        "You are not allowed to start nested transactions for the same EntityManagerFactory. Another EntityManager already started a transaction."
+                        + " To allow nested transactions set EMConfig.setJoinableTransactions( true )" );
 
+                }
             }
-        }
 
-        incrementCallstack();
+            incrementCallstack();
 
-        EntityManager em = getEM();
+            EntityManager em = getEM();
 
-        if ( !canTransact() ) {
-            return em;
-        }
+            if ( !canTransact() ) {
+                return em;
+            }
 
-        if ( em.getTransaction().isActive() ) {
-            throw new RuntimeException( "You are trying to begin a transaction while another transaction is already active. "
-                + "Ensure you cleanup the transaction before starting a new one." );
-        }
+            if ( em.getTransaction().isActive() ) {
+                throw new RuntimeException( "You are trying to begin a transaction while another transaction is already active. "
+                    + "Ensure you cleanup the transaction before starting a new one." );
+            }
 
-        em.getTransaction().begin();
+            em.getTransaction().begin();
 
             return em;
 
@@ -78,8 +76,8 @@ public class EMContext {
     }
 
     public void rollbackTransaction() {
-        // always rollback even in nested TX.
 
+        // always rollback even in nested TX.
 //        if ( !canRollback() ) {
 //            return;
 //        }
@@ -87,7 +85,10 @@ public class EMContext {
 
         try {
 
+            decrementCallstack();
+
             if ( em.isOpen() && em.getTransaction().isActive() ) {
+
 
                 em.getTransaction().rollback();
             }
@@ -105,6 +106,8 @@ public class EMContext {
             return;
         }
 
+        decrementCallstack();
+
         if ( !canCommit() ) {
             return;
         }
@@ -117,7 +120,7 @@ public class EMContext {
     }
 
     public void cleanupTransaction( CloseHandle closeHandle ) {
-        decrementCallstack();
+        //decrementCallstack();
 
         if ( canClose() ) {
 
@@ -132,15 +135,19 @@ public class EMContext {
                 // TODO close the EM anyway in order to stop leaks
                 RuntimeException re = performCleanupTransactionQuietly( closeHandle );
 
-
                 IllegalStateException ise = new IllegalStateException(
                     "The CloseHandle used to cleanupTransaction is the same CoseHandle used with EM.openInView(), however"
                     + " there are EntityManagers that are still busy with Transactions. These transactions must be committed or rolled back." );
 
                 Exception ex = EMUtils.addSuppressed( ise, re );
                 EMUtils.throwAsRuntimeIfException( ex );
-            }
 
+            } else {
+                // cannot close EM, but if the EM transaction is active, then we throw an exception because we are trying to cleanup an EM without commit or rollback.
+                if ( getEM().isOpen() && getEM().getTransaction().isActive() ) {
+                    //throw new IllegalStateException("Cannot cleanup the EM because the transaction is still active. Transactions must be committed or rolled back before cleanup.");
+                }
+            }
         }
     }
 
@@ -167,7 +174,6 @@ public class EMContext {
         }
     }
 
-
     public void cleanupTransaction() {
         cleanupTransaction( null );
     }
@@ -177,15 +183,20 @@ public class EMContext {
     }
 
     public boolean canRollback() {
-        return canTransact();
+        //return callstack.size() == 1;
+        return true;
     }
 
     public boolean canCommit() {
-        return canTransact();
+        return callstack.size() == 0;
     }
 
     public boolean canClose() {
         return callstack.size() == 0;
+    }
+
+    public int getCallstackSize() {
+        return callstack.size();
     }
 
     public static void setOpenInViewHandle( EntityManagerFactory emf, CloseHandle handle ) {
@@ -281,12 +292,23 @@ public class EMContext {
             if ( em.isOpen() ) {
                 if ( em.getTransaction().isActive() ) {
 
-                    if (AUTO_ROLLBACK_LOGGING_ENABLED) {
-                        Throwable t = new Throwable( "Transaction is still active. Rolling transaction back in order to cleanup" );
+
+                    String msg = "Transaction is still active. Rolling transaction back in order to cleanup. Ensure transactions commit or rollback before closing the EntityManager";
+
+                    // Only log the exception if we're not throwing exception below.
+                    // However if we do not throw exception, log it *before* we rollbackTransaction, in case rollbackTransaction fails
+                    if ( EMConfig.ON_AUTO_ROLLBACK_LOG && !EMConfig.ON_AUTO_ROLLBACK_THROW_EXCEPTION ) {
+                        Throwable t = new Throwable( msg );
                         LOGGER.log( Level.SEVERE, t.getMessage(), t );
                     }
 
                     rollbackTransaction();
+
+                    if ( EMConfig.ON_AUTO_ROLLBACK_THROW_EXCEPTION ) {
+                        throw new IllegalStateException( msg );
+                    }
+
+
                 }
 
             } else {

@@ -114,7 +114,7 @@ class NewEM {
 
         } catch ( Exception ex ) {
 
-            LOGGER.log( Level.SEVERE, "Error closing EntityManager", ex );
+            //LOGGER.log( Level.SEVERE, "Error closing EntityManager", ex );
             exception = addSuppressed( ex, exception );
             throw EMUtils.toRuntimeException( exception );
 
@@ -150,9 +150,20 @@ class NewEM {
             if ( em.isOpen() ) {
                 if ( em.getTransaction().isActive() ) {
 
-                    Throwable t = new Throwable( "Transaction is still active. Rolling transaction back in order to cleanup" );
-                    LOGGER.log( Level.SEVERE, t.getMessage(), t );
+                    String msg = "Transaction is still active. Rolling transaction back in order to cleanup. Ensure transactions commit or rollback before closing the EntityManager";
+
+                    // Only log the exception if we're not throwing exception below.
+                    // However if we do not throw exception, log it *before* we rollbackTransaction, in case rollbackTransaction fails
+                    if ( EMConfig.ON_AUTO_ROLLBACK_LOG && !EMConfig.ON_AUTO_ROLLBACK_THROW_EXCEPTION ) {
+                        Throwable t = new Throwable( msg );
+                        LOGGER.log( Level.SEVERE, t.getMessage(), t );
+                    }
+
                     rollbackTransaction( em );
+
+                    if ( EMConfig.ON_AUTO_ROLLBACK_THROW_EXCEPTION ) {
+                        throw new IllegalStateException( msg );
+                    }
                 }
 
             } else {

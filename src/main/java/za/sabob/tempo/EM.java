@@ -353,7 +353,7 @@ public class EM {
 
         } catch ( Exception ex ) {
 
-            LOGGER.log( Level.SEVERE, "Error closing EntityManager", ex );
+            //LOGGER.log( Level.SEVERE, "Error closing EntityManager", ex );
             exception = addSuppressed( ex, exception );
 
         } finally {

@@ -9,22 +9,22 @@ public class EMUtils {
      * Adds the given suppressedException to the mainException and returns the mainException, unless it is null, in which case the suppressedException is
      * returned.
      *
-     * @param mainException the main exception on which to add the suppressedException
-     * @param supressedException the exception to add to the mainException
+     * @param primaryException the primary exception that was thrown in the try block to which the suppressedException is added
+     * @param supressedException the suppressed exception thrown in the finally block to add to the primaryException
      * @return the mainException or supresesdException if mainException is null
      */
-    public static Exception addSuppressed( Exception mainException, Exception supressedException ) {
+    public static Exception addSuppressed( Exception primaryException, Exception supressedException ) {
 
         if ( supressedException == null ) {
-            return mainException;
+            return primaryException;
         }
 
-        if ( mainException == null ) {
+        if ( primaryException == null ) {
             return supressedException;
         }
 
-        mainException.addSuppressed( supressedException );
-        return mainException;
+        primaryException.addSuppressed( supressedException );
+        return primaryException;
     }
 
     /**

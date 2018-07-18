@@ -4,6 +4,10 @@ import javax.persistence.*;
 
 public class EMConfig {
 
+    public static boolean ON_AUTO_ROLLBACK_LOG = true;
+
+    public static boolean ON_AUTO_ROLLBACK_THROW_EXCEPTION = true;
+
     private static final ThreadLocal<Boolean> JOINABLE_TRANSACTIONS = new ThreadLocal<>();
 
     private static boolean JOINABLE_TRANSACTIONS_DEFAULT = true;
