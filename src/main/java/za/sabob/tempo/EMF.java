@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
 import javax.persistence.*;
+
 import za.sabob.tempo.util.*;
 
 public final class EMF {
@@ -24,7 +25,7 @@ public final class EMF {
         if ( defaultEMF != null ) {
             if ( defaultEMF.isOpen() ) {
                 throw new IllegalStateException( "EMF already has a default EntityManagerFactory that is open. You should prpobably close "
-                    + "the current default instance before setting a new default" );
+                        + "the current default instance before setting a new default" );
             }
         }
 
@@ -121,9 +122,46 @@ public final class EMF {
 
     }
 
+    public static void closeAllEM() {
+
+        Exception exception = null;
+
+        try {
+
+            closeAllEM( getDefault() );
+
+        } catch ( Exception e ) {
+            exception = EMUtils.addSuppressed( e, exception );
+        }
+
+
+        for ( EntityManagerFactory emf : FACTORIES.values() ) {
+
+            try {
+
+                closeAllEM( emf );
+
+            } catch ( Exception e ) {
+                exception = EMUtils.addSuppressed( e, exception );
+            }
+        }
+
+        EMUtils.throwAsRuntimeIfException( exception );
+    }
+
+
     public static void closeAll() {
 
         Exception exception = null;
+
+        try {
+
+            close( getDefault() );
+
+        } catch ( Exception e ) {
+            exception = EMUtils.addSuppressed( e, exception );
+        }
+
 
         for ( EntityManagerFactory emf : FACTORIES.values() ) {
 
@@ -143,10 +181,11 @@ public final class EMF {
 
         if ( emf != null && emf.isOpen() ) {
 
+
             Exception exception = null;
 
             try {
-                closeContainer( emf );
+                closeAllEM( emf );
 
             } catch ( RuntimeException e ) {
                 exception = EMUtils.addSuppressed( e, exception );
@@ -154,6 +193,23 @@ public final class EMF {
 
             try {
                 emf.close();
+
+            } catch ( RuntimeException e ) {
+                exception = EMUtils.addSuppressed( e, exception );
+            }
+
+            EMUtils.throwAsRuntimeIfException( exception );
+        }
+    }
+
+    public static void closeAllEM( EntityManagerFactory emf ) {
+
+        if ( emf != null && emf.isOpen() ) {
+
+            Exception exception = null;
+
+            try {
+                closeContainer( emf );
 
             } catch ( RuntimeException e ) {
                 exception = EMUtils.addSuppressed( e, exception );
