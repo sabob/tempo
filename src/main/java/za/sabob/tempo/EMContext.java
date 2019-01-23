@@ -335,7 +335,8 @@ public class EMContext {
             cleanupResources();
 
         } else {
-            LOGGER.warning( "EntityManager is already closed" );
+            LOGGER.warning( "EntityManager is already closed, cleaning up ThreadLocal resources." );
+            cleanupResources();
         }
 
         this.closeHandle = null;
