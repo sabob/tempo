@@ -194,7 +194,11 @@ public class EM {
     }
 
     public static void setRollbackOnly( EntityManager em ) {
-        em.getTransaction().setRollbackOnly();
+
+        // Guard against em not having transaction. I've only seen this happen once with OutOfMemory exception.
+        if (em.getTransaction().isActive()) {
+            em.getTransaction().setRollbackOnly();
+        }
     }
 
     public static void rollbackTransaction( EntityManager em ) {
